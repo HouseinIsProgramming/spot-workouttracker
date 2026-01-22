@@ -1,14 +1,13 @@
 import { useState } from 'react'
-import { Search } from 'lucide-react'
+import { Search, Check, Dumbbell } from 'lucide-react'
 import {
   Drawer,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { cn } from '@/lib/utils'
 import { useExerciseSearch, useRecentExerciseIds, useActiveWorkout } from '@/lib/data/hooks'
 import type { MuscleGroup } from '@/lib/data/types'
 
@@ -45,18 +44,20 @@ export function ExercisePickerDrawer({
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="max-h-[85dvh]">
-        <DrawerHeader>
-          <DrawerTitle>Add Exercise</DrawerTitle>
+        <DrawerHeader className="pb-2">
+          <DrawerTitle className="text-base">Add Exercise</DrawerTitle>
         </DrawerHeader>
 
-        <div className="px-4 pb-2">
+        {/* Search input */}
+        <div className="px-4 pb-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
+            <input
+              type="text"
               placeholder="Search exercises..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="pl-10"
+              className="w-full h-11 pl-10 pr-4 rounded-xl bg-muted/50 border-0 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
               autoFocus
             />
           </div>
@@ -66,47 +67,58 @@ export function ExercisePickerDrawer({
           <div className="space-y-1">
             {searchResults.map((exercise) => {
               const isInWorkout = exercisesInWorkout.includes(exercise.id)
+              const matchesFocus = exercise.muscleGroups.some((m) =>
+                workoutFocus.includes(m)
+              )
 
               return (
                 <button
                   key={exercise.id}
                   onClick={() => !isInWorkout && handleSelect(exercise.id)}
                   disabled={isInWorkout}
-                  className={`
-                    w-full text-left p-3 rounded-lg transition-colors
-                    ${isInWorkout
-                      ? 'opacity-50 cursor-not-allowed bg-muted'
-                      : 'hover:bg-accent active:bg-accent/80'
-                    }
-                  `}
+                  className={cn(
+                    'w-full text-left p-3 rounded-xl transition-colors flex items-center gap-3',
+                    isInWorkout
+                      ? 'opacity-50 cursor-not-allowed'
+                      : 'hover:bg-muted/50 active:bg-muted'
+                  )}
                 >
-                  <div className="font-medium">{exercise.name}</div>
-                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                    {exercise.muscleGroups.map((muscle) => (
-                      <Badge
-                        key={muscle}
-                        variant={workoutFocus.includes(muscle) ? 'default' : 'outline'}
-                        className="text-[10px] capitalize h-5"
-                      >
-                        {muscle}
-                      </Badge>
-                    ))}
-                    {exercise.equipment && (
-                      <Badge variant="secondary" className="text-[10px] capitalize h-5">
-                        {exercise.equipment}
-                      </Badge>
+                  {/* Icon */}
+                  <div
+                    className={cn(
+                      'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0',
+                      isInWorkout
+                        ? 'bg-green-500/10'
+                        : matchesFocus
+                          ? 'bg-primary/10'
+                          : 'bg-muted'
                     )}
-                    {isInWorkout && (
-                      <Badge variant="secondary" className="text-[10px] h-5">
-                        Added
-                      </Badge>
+                  >
+                    {isInWorkout ? (
+                      <Check className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <Dumbbell
+                        className={cn(
+                          'h-4 w-4',
+                          matchesFocus ? 'text-primary' : 'text-muted-foreground'
+                        )}
+                      />
                     )}
+                  </div>
+
+                  {/* Exercise info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm truncate">{exercise.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {exercise.muscleGroups.map((m) => m.charAt(0).toUpperCase() + m.slice(1)).join(', ')}
+                      {exercise.equipment && ` · ${exercise.equipment}`}
+                    </div>
                   </div>
                 </button>
               )
             })}
             {searchResults.length === 0 && query && (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-8 text-muted-foreground text-sm">
                 No exercises found for "{query}"
               </div>
             )}

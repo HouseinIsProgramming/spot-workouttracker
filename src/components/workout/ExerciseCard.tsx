@@ -1,8 +1,5 @@
 import { useState, useRef } from 'react'
-import { Trash2, ChevronDown, ChevronUp } from 'lucide-react'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { X, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useExercise, useLastExerciseSets, useActiveWorkout } from '@/lib/data/hooks'
@@ -29,6 +26,7 @@ export function ExerciseCard({ workoutExercise }: ExerciseCardProps) {
 
   const workingSets = workoutExercise.sets.filter((s) => s.type !== 'warmup')
   const warmupSets = workoutExercise.sets.filter((s) => s.type === 'warmup')
+  const totalSets = workoutExercise.sets.length
 
   const handleDeleteExercise = () => {
     if (confirmDelete) {
@@ -40,7 +38,6 @@ export function ExerciseCard({ workoutExercise }: ExerciseCardProps) {
           label: 'Undo',
           onClick: () => {
             // Re-add exercise - this is a simplified undo
-            // In production you'd want a more robust undo system
           },
         },
       })
@@ -74,53 +71,67 @@ export function ExerciseCard({ workoutExercise }: ExerciseCardProps) {
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between">
+    <div className="bg-card rounded-xl border border-border/50 overflow-hidden">
+      {/* Header - always visible */}
+      <div
+        className={cn(
+          'flex items-center gap-3 p-4 transition-colors',
+          expanded ? 'border-b border-border/50' : ''
+        )}
+      >
+        {/* Exercise info - tap to collapse */}
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex-1 flex items-center gap-3 text-left"
+        >
           <div className="flex-1 min-w-0">
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className="flex items-center gap-2 text-left w-full"
-            >
-              <h3 className="font-semibold truncate">{exercise.name}</h3>
-              {expanded ? (
-                <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              ) : (
-                <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              )}
-            </button>
-            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-              {workingSets.length > 0 && (
-                <Badge variant="secondary" className="text-xs">
-                  {workingSets.length} set{workingSets.length !== 1 ? 's' : ''}
-                </Badge>
-              )}
-              {lastSets && (
+            <h3 className="font-semibold text-base truncate">{exercise.name}</h3>
+            <div className="flex items-center gap-2 mt-0.5">
+              {totalSets > 0 ? (
                 <span className="text-xs text-muted-foreground">
-                  Last: {lastSets[0]?.weight}kg × {lastSets[0]?.reps}
+                  {workingSets.length} working{warmupSets.length > 0 ? ` + ${warmupSets.length}W` : ''}
                 </span>
+              ) : (
+                <span className="text-xs text-muted-foreground">No sets yet</span>
+              )}
+              {lastSets && lastSets[0] && (
+                <>
+                  <span className="text-muted-foreground/30">·</span>
+                  <span className="text-xs text-muted-foreground">
+                    Last: {lastSets[0].weight}kg × {lastSets[0].reps}
+                  </span>
+                </>
               )}
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
+          <ChevronDown
             className={cn(
-              'transition-all',
-              confirmDelete
-                ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
-                : 'text-muted-foreground hover:text-destructive'
+              'h-4 w-4 text-muted-foreground transition-transform',
+              expanded ? 'rotate-180' : ''
             )}
-            onClick={handleDeleteExercise}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardHeader>
+          />
+        </button>
 
+        {/* Delete button */}
+        <button
+          type="button"
+          onClick={handleDeleteExercise}
+          className={cn(
+            'w-8 h-8 flex items-center justify-center rounded-full transition-all flex-shrink-0',
+            confirmDelete
+              ? 'bg-destructive text-destructive-foreground'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+          )}
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Expandable content */}
       {expanded && (
-        <CardContent className="space-y-3">
-          {workoutExercise.sets.length > 0 && (
+        <div className="p-4 pt-3 space-y-3">
+          {/* Logged sets */}
+          {totalSets > 0 && (
             <div className="space-y-1">
               {warmupSets.map((set, idx) => (
                 <SetRow
@@ -141,13 +152,14 @@ export function ExerciseCard({ workoutExercise }: ExerciseCardProps) {
             </div>
           )}
 
+          {/* Input for new set */}
           <SetInput
             workoutExerciseId={workoutExercise.id}
             defaultWeight={defaultWeight}
             defaultReps={defaultReps}
           />
-        </CardContent>
+        </div>
       )}
-    </Card>
+    </div>
   )
 }

@@ -1,8 +1,7 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { Plus, MoreVertical, Check, Trash2 } from 'lucide-react'
+import { Plus, MoreVertical, Check, Trash2, Play, Timer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,11 +27,14 @@ export function WorkoutPage() {
   if (!isActive || !workout) {
     return (
       <div className="p-4 flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <h1 className="text-xl font-semibold mb-2">No Active Workout</h1>
-        <p className="text-muted-foreground mb-6">
-          Start a new workout to begin logging exercises.
+        <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+          <Play className="h-7 w-7 text-muted-foreground" />
+        </div>
+        <h1 className="text-lg font-semibold mb-1">No Active Workout</h1>
+        <p className="text-sm text-muted-foreground mb-6">
+          Start a workout to begin logging
         </p>
-        <Button size="lg" onClick={() => setShowStartDrawer(true)}>
+        <Button size="lg" className="rounded-xl" onClick={() => setShowStartDrawer(true)}>
           <Plus className="mr-2 h-5 w-5" />
           Start Workout
         </Button>
@@ -47,6 +49,11 @@ export function WorkoutPage() {
   const duration = Math.floor((Date.now() - workout.startedAt) / 60000)
   const hours = Math.floor(duration / 60)
   const minutes = duration % 60
+
+  const focusLabel =
+    workout.focus.length > 0
+      ? workout.focus.map((m) => m.charAt(0).toUpperCase() + m.slice(1)).join(' + ')
+      : 'Freestyle'
 
   const handleComplete = () => {
     completeWorkout()
@@ -68,26 +75,20 @@ export function WorkoutPage() {
 
   return (
     <div className="p-4 space-y-4">
-      {/* Header */}
+      {/* Header - clean and minimal */}
       <header className="flex items-center justify-between">
         <div>
-          <div className="flex items-center gap-2 flex-wrap">
-            {workout.focus.map((muscle) => (
-              <Badge key={muscle} variant="secondary" className="capitalize">
-                {muscle}
-              </Badge>
-            ))}
-            {workout.focus.length === 0 && (
-              <Badge variant="secondary">Freestyle</Badge>
-            )}
+          <h1 className="text-lg font-semibold">{focusLabel}</h1>
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <Timer className="h-3.5 w-3.5" />
+            <span>{hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`}</span>
+            <span className="mx-1">·</span>
+            <span>{workout.exercises.length} exercises</span>
           </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            {hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`} elapsed
-          </p>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" className="h-9 w-9">
               <MoreVertical className="h-5 w-5" />
             </Button>
           </DropdownMenuTrigger>
@@ -115,7 +116,7 @@ export function WorkoutPage() {
       </header>
 
       {/* Exercise list */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {workout.exercises.map((workoutExercise) => (
           <ExerciseCard
             key={workoutExercise.id}
@@ -125,21 +126,21 @@ export function WorkoutPage() {
       </div>
 
       {/* Add exercise button */}
-      <Button
-        variant="outline"
-        className="w-full h-12"
+      <button
+        type="button"
         onClick={() => setShowExercisePicker(true)}
+        className="w-full h-12 border-2 border-dashed border-border/50 rounded-xl text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors flex items-center justify-center gap-2"
       >
-        <Plus className="mr-2 h-5 w-5" />
-        Add Exercise
-      </Button>
+        <Plus className="h-5 w-5" />
+        <span className="font-medium">Add Exercise</span>
+      </button>
 
       {/* Complete button (sticky at bottom) */}
       {workout.exercises.length > 0 && (
         <div className="fixed bottom-20 left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent pt-8">
           <Button
             size="lg"
-            className="w-full h-12"
+            className="w-full h-12 rounded-xl"
             onClick={handleComplete}
           >
             <Check className="mr-2 h-5 w-5" />

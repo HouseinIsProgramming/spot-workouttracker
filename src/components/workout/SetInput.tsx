@@ -1,14 +1,6 @@
 import { useState } from 'react'
-import { Minus, Plus, Check } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Minus, Plus } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { useActiveWorkout } from '@/lib/data/hooks'
 import type { SetType } from '@/lib/data/types'
 
@@ -21,135 +13,120 @@ type SetInputProps = {
   defaultReps: number
 }
 
+const setTypes: { value: SetType; label: string }[] = [
+  { value: 'normal', label: 'Working' },
+  { value: 'warmup', label: 'Warmup' },
+  { value: 'dropset', label: 'Drop' },
+  { value: 'myorep', label: 'Myo' },
+  { value: 'failure', label: 'Failure' },
+]
+
 export function SetInput({ workoutExerciseId, defaultWeight, defaultReps }: SetInputProps) {
   const { addSet } = useActiveWorkout()
-  const [weight, setWeight] = useState<number | ''>(defaultWeight || '')
-  const [reps, setReps] = useState<number | ''>(defaultReps || '')
+  const [weight, setWeight] = useState<number>(defaultWeight || 0)
+  const [reps, setReps] = useState<number>(defaultReps || 10)
   const [setType, setSetType] = useState<SetType>('normal')
 
-  const displayWeight = weight === '' ? defaultWeight : weight
-  const displayReps = reps === '' ? defaultReps : reps
-
   const handleComplete = () => {
-    const finalWeight = weight === '' ? defaultWeight : weight
-    const finalReps = reps === '' ? defaultReps : reps
-
-    if (finalReps <= 0) return
-
-    addSet(workoutExerciseId, finalWeight, finalReps, setType)
-
-    // Reset to empty (will show placeholders from defaults)
-    setWeight('')
-    setReps('')
-    setSetType('normal')
+    if (reps <= 0) return
+    addSet(workoutExerciseId, weight, reps, setType)
+    // Keep values for next set (user usually does same weight)
   }
 
   const incrementWeight = (delta: number) => {
-    const current = weight === '' ? defaultWeight : weight
-    setWeight(Math.max(0, current + delta))
+    setWeight((prev) => Math.max(0, prev + delta))
   }
 
   const incrementReps = (delta: number) => {
-    const current = reps === '' ? defaultReps : reps
-    setReps(Math.max(1, current + delta))
+    setReps((prev) => Math.max(1, prev + delta))
   }
 
   return (
-    <div className="space-y-3 pt-2 border-t">
-      <div className="flex items-center gap-2">
-        {/* Weight input */}
-        <div className="flex items-center gap-1 flex-1">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-10 w-10 flex-shrink-0"
+    <div className="space-y-3 pt-3 border-t border-border/50">
+      {/* Main input row - big touch targets */}
+      <div className="flex items-stretch gap-2">
+        {/* Weight control */}
+        <div className="flex-1 flex items-stretch bg-muted/50 rounded-xl overflow-hidden">
+          <button
+            type="button"
             onClick={() => incrementWeight(-WEIGHT_INCREMENT)}
+            className="w-12 flex items-center justify-center text-muted-foreground hover:bg-muted active:bg-muted/80 transition-colors"
           >
-            <Minus className="h-4 w-4" />
-          </Button>
-          <div className="relative flex-1 min-w-[80px]">
-            <Input
-              type="number"
-              value={weight}
-              onChange={(e) => setWeight(e.target.value ? Number(e.target.value) : '')}
-              placeholder={String(defaultWeight)}
-              className="text-center pr-8 h-10"
-            />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-              kg
-            </span>
-          </div>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-10 w-10 flex-shrink-0"
+            <Minus className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
             onClick={() => incrementWeight(WEIGHT_INCREMENT)}
+            className="flex-1 flex flex-col items-center justify-center py-3 hover:bg-muted/30 active:bg-muted/50 transition-colors"
           >
-            <Plus className="h-4 w-4" />
-          </Button>
+            <span className="text-3xl font-bold tabular-nums tracking-tight">{weight}</span>
+            <span className="text-xs text-muted-foreground uppercase tracking-wider">kg</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => incrementWeight(WEIGHT_INCREMENT)}
+            className="w-12 flex items-center justify-center text-muted-foreground hover:bg-muted active:bg-muted/80 transition-colors"
+          >
+            <Plus className="h-5 w-5" />
+          </button>
         </div>
 
-        {/* Reps input */}
-        <div className="flex items-center gap-1 flex-1">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-10 w-10 flex-shrink-0"
+        {/* Reps control */}
+        <div className="flex-1 flex items-stretch bg-muted/50 rounded-xl overflow-hidden">
+          <button
+            type="button"
             onClick={() => incrementReps(-REP_INCREMENT)}
+            className="w-12 flex items-center justify-center text-muted-foreground hover:bg-muted active:bg-muted/80 transition-colors"
           >
-            <Minus className="h-4 w-4" />
-          </Button>
-          <div className="relative flex-1 min-w-[60px]">
-            <Input
-              type="number"
-              value={reps}
-              onChange={(e) => setReps(e.target.value ? Number(e.target.value) : '')}
-              placeholder={String(defaultReps)}
-              className="text-center pr-10 h-10"
-            />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-              reps
-            </span>
-          </div>
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-10 w-10 flex-shrink-0"
+            <Minus className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
             onClick={() => incrementReps(REP_INCREMENT)}
+            className="flex-1 flex flex-col items-center justify-center py-3 hover:bg-muted/30 active:bg-muted/50 transition-colors"
           >
-            <Plus className="h-4 w-4" />
-          </Button>
+            <span className="text-3xl font-bold tabular-nums tracking-tight">{reps}</span>
+            <span className="text-xs text-muted-foreground uppercase tracking-wider">reps</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => incrementReps(REP_INCREMENT)}
+            className="w-12 flex items-center justify-center text-muted-foreground hover:bg-muted active:bg-muted/80 transition-colors"
+          >
+            <Plus className="h-5 w-5" />
+          </button>
         </div>
       </div>
 
+      {/* Set type pills + Log button */}
       <div className="flex items-center gap-2">
-        {/* Set type selector */}
-        <Select value={setType} onValueChange={(v) => setSetType(v as SetType)}>
-          <SelectTrigger className="flex-1 h-10">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="normal">Normal</SelectItem>
-            <SelectItem value="warmup">Warmup</SelectItem>
-            <SelectItem value="dropset">Dropset</SelectItem>
-            <SelectItem value="myorep">Myo-rep</SelectItem>
-            <SelectItem value="failure">To Failure</SelectItem>
-            <SelectItem value="rest-pause">Rest-Pause</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex-1 flex gap-1 overflow-x-auto pb-1 -mb-1">
+          {setTypes.map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setSetType(value)}
+              className={cn(
+                'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all',
+                setType === value
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
-        {/* Complete button */}
-        <Button onClick={handleComplete} className="h-10 px-6">
-          <Check className="mr-1 h-4 w-4" />
-          Log Set
-        </Button>
+        {/* Log button - the main CTA */}
+        <button
+          type="button"
+          onClick={handleComplete}
+          className="h-10 px-6 bg-primary text-primary-foreground font-semibold rounded-full hover:bg-primary/90 active:scale-95 transition-all"
+        >
+          Log
+        </button>
       </div>
-
-      {/* Preview */}
-      <p className="text-xs text-muted-foreground text-center">
-        {displayWeight}kg × {displayReps} reps
-        {setType !== 'normal' && ` (${setType})`}
-      </p>
     </div>
   )
 }
