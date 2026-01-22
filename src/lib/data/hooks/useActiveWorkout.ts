@@ -1,5 +1,5 @@
 import { useCallback, useSyncExternalStore } from 'react'
-import type { MuscleGroup, Workout, WorkoutExercise, Set, SetType } from '../types'
+import type { MuscleGroup, Workout, WorkoutExercise, Set, SetType, PRType } from '../types'
 import { addCompletedWorkout } from './useWorkouts'
 
 const STORAGE_KEY = 'workout-tracker-active-workout'
@@ -98,13 +98,27 @@ export function useActiveWorkout() {
     })
   }, [])
 
+  const restoreExercise = useCallback((exercise: WorkoutExercise, atIndex?: number) => {
+    updateActiveWorkout((prev) => {
+      if (!prev) return prev
+      const exercises = [...prev.exercises]
+      if (atIndex !== undefined && atIndex >= 0 && atIndex <= exercises.length) {
+        exercises.splice(atIndex, 0, exercise)
+      } else {
+        exercises.push(exercise)
+      }
+      return { ...prev, exercises }
+    })
+  }, [])
+
   const addSet = useCallback(
     (
       workoutExerciseId: string,
       weight: number,
       reps: number,
       type: SetType = 'normal',
-      rpe?: number
+      rpe?: number,
+      prs?: PRType[]
     ) => {
       updateActiveWorkout((prev) => {
         if (!prev) return prev
@@ -119,6 +133,7 @@ export function useActiveWorkout() {
               type,
               rpe,
               completedAt: Date.now(),
+              prs: prs && prs.length > 0 ? prs : undefined,
             }
             return {
               ...we,
@@ -196,6 +211,7 @@ export function useActiveWorkout() {
     startWorkout,
     addExercise,
     removeExercise,
+    restoreExercise,
     addSet,
     updateSet,
     removeSet,

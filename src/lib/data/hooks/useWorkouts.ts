@@ -1,7 +1,7 @@
 import { useMemo, useSyncExternalStore } from 'react'
 import { mockWorkouts } from '../workouts'
 import { getExerciseById } from '../exercises'
-import type { MuscleGroup, MuscleStatus, Workout, WorkoutExercise, Set as WorkoutSet } from '../types'
+import type { MuscleGroup, MuscleStatus, Workout, WorkoutExercise, Set as WorkoutSet, PRType } from '../types'
 
 const STORAGE_KEY = 'workout-tracker-completed-workouts'
 
@@ -174,4 +174,86 @@ export function useMuscleStatus(): Record<MuscleGroup, { status: MuscleStatus; h
 
     return result
   }, [workouts])
+}
+
+// PR Detection
+export type ExercisePRs = {
+  maxWeight: number
+  maxVolume: number // weight × reps
+  maxRepsAtWeight: Record<number, number> // weight -> max reps
+}
+
+// Get the current PRs for an exercise from history
+export function getExercisePRs(exerciseId: string): ExercisePRs {
+  // Access the store directly (not a hook, for use in callbacks)
+  const allWorkouts = [...completedWorkouts, ...mockWorkouts]
+
+  const prs: ExercisePRs = {
+    maxWeight: 0,
+    maxVolume: 0,
+    maxRepsAtWeight: {},
+  }
+
+  for (const workout of allWorkouts) {
+    if (!workout.completedAt) continue
+
+    const workoutExercise = workout.exercises.find(
+      (we) => we.exerciseId === exerciseId
+    )
+    if (!workoutExercise) continue
+
+    for (const set of workoutExercise.sets) {
+      if (set.type === 'warmup') continue
+
+      // Track max weight
+      if (set.weight > prs.maxWeight) {
+        prs.maxWeight = set.weight
+      }
+
+      // Track max volume
+      const volume = set.weight * set.reps
+      if (volume > prs.maxVolume) {
+        prs.maxVolume = volume
+      }
+
+      // Track max reps at each weight
+      if (!prs.maxRepsAtWeight[set.weight] || set.reps > prs.maxRepsAtWeight[set.weight]) {
+        prs.maxRepsAtWeight[set.weight] = set.reps
+      }
+    }
+  }
+
+  return prs
+}
+
+// Check what PRs a new set would achieve
+export function checkForPRs(
+  exerciseId: string,
+  weight: number,
+  reps: number,
+  setType: string
+): PRType[] {
+  if (setType === 'warmup') return []
+
+  const currentPRs = getExercisePRs(exerciseId)
+  const achievedPRs: PRType[] = []
+
+  // Weight PR: heavier than ever before
+  if (weight > currentPRs.maxWeight) {
+    achievedPRs.push('weight')
+  }
+
+  // Volume PR: weight × reps higher than ever
+  const volume = weight * reps
+  if (volume > currentPRs.maxVolume && currentPRs.maxVolume > 0) {
+    achievedPRs.push('volume')
+  }
+
+  // Reps PR: more reps at this weight than ever
+  const maxRepsAtWeight = currentPRs.maxRepsAtWeight[weight] ?? 0
+  if (reps > maxRepsAtWeight && maxRepsAtWeight > 0) {
+    achievedPRs.push('reps')
+  }
+
+  return achievedPRs
 }

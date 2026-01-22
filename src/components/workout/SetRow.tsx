@@ -1,12 +1,13 @@
 import { useState, useRef } from 'react'
-import { X } from 'lucide-react'
+import { X, Trophy } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { Set } from '@/lib/data/types'
+import type { Set, PRType } from '@/lib/data/types'
 
 type SetRowProps = {
   set: Set
   index: number
-  onDelete: () => void
+  onDelete?: () => void // Optional for history view
+  compact?: boolean // For history view
 }
 
 const setTypeStyles: Record<string, string> = {
@@ -17,11 +18,18 @@ const setTypeStyles: Record<string, string> = {
   'rest-pause': 'text-blue-400',
 }
 
-export function SetRow({ set, index, onDelete }: SetRowProps) {
+const prShortLabels: Record<PRType, string> = {
+  weight: 'W',
+  volume: 'V',
+  reps: 'R',
+}
+
+export function SetRow({ set, index, onDelete, compact }: SetRowProps) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   const handleDeleteClick = () => {
+    if (!onDelete) return
     if (confirmDelete) {
       onDelete()
       setConfirmDelete(false)
@@ -33,12 +41,15 @@ export function SetRow({ set, index, onDelete }: SetRowProps) {
   }
 
   const isWarmup = set.type === 'warmup'
+  const hasPRs = set.prs && set.prs.length > 0
 
   return (
     <div
       className={cn(
-        'flex items-center gap-3 py-2 px-3 rounded-lg transition-all group',
-        confirmDelete ? 'bg-destructive/10' : 'hover:bg-muted/50'
+        'flex items-center gap-3 rounded-lg transition-all group',
+        compact ? 'py-1 px-2' : 'py-2 px-3',
+        confirmDelete ? 'bg-destructive/10' : onDelete ? 'hover:bg-muted/50' : '',
+        hasPRs && 'bg-yellow-500/5'
       )}
     >
       {/* Set number */}
@@ -55,7 +66,8 @@ export function SetRow({ set, index, onDelete }: SetRowProps) {
         setTypeStyles[set.type] || 'text-foreground'
       )}>
         <span className={cn(
-          'text-lg tabular-nums',
+          'tabular-nums',
+          compact ? 'text-base' : 'text-lg',
           isWarmup ? 'font-normal' : 'font-semibold'
         )}>
           {set.weight}
@@ -63,12 +75,23 @@ export function SetRow({ set, index, onDelete }: SetRowProps) {
         <span className="text-muted-foreground text-sm">kg</span>
         <span className="text-muted-foreground mx-1">×</span>
         <span className={cn(
-          'text-lg tabular-nums',
+          'tabular-nums',
+          compact ? 'text-base' : 'text-lg',
           isWarmup ? 'font-normal' : 'font-semibold'
         )}>
           {set.reps}
         </span>
       </div>
+
+      {/* PR badge */}
+      {hasPRs && (
+        <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-600 dark:text-yellow-400">
+          <Trophy className="h-3 w-3" />
+          <span className="text-[10px] font-bold">
+            {set.prs!.map((pr) => prShortLabels[pr]).join('')}
+          </span>
+        </span>
+      )}
 
       {/* Set type badge (only for non-normal) */}
       {set.type !== 'normal' && (
@@ -87,19 +110,21 @@ export function SetRow({ set, index, onDelete }: SetRowProps) {
         </span>
       )}
 
-      {/* Delete button */}
-      <button
-        type="button"
-        onClick={handleDeleteClick}
-        className={cn(
-          'w-7 h-7 flex items-center justify-center rounded-full transition-all',
-          confirmDelete
-            ? 'bg-destructive text-destructive-foreground'
-            : 'opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground hover:bg-muted'
-        )}
-      >
-        <X className="h-3.5 w-3.5" />
-      </button>
+      {/* Delete button (only if onDelete provided) */}
+      {onDelete && (
+        <button
+          type="button"
+          onClick={handleDeleteClick}
+          className={cn(
+            'w-7 h-7 flex items-center justify-center rounded-full transition-all',
+            confirmDelete
+              ? 'bg-destructive text-destructive-foreground'
+              : 'opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground hover:bg-muted'
+          )}
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
     </div>
   )
 }

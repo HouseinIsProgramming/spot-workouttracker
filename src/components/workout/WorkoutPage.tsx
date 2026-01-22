@@ -55,10 +55,19 @@ export function WorkoutPage() {
       ? workout.focus.map((m) => m.charAt(0).toUpperCase() + m.slice(1)).join(' + ')
       : 'Freestyle'
 
+  const [confirmComplete, setConfirmComplete] = useState(false)
+  const completeTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+
   const handleComplete = () => {
-    completeWorkout()
-    toast.success('Workout completed!')
-    navigate({ to: '/history' })
+    if (confirmComplete) {
+      completeWorkout()
+      toast.success('Workout completed!')
+      navigate({ to: '/history' })
+    } else {
+      setConfirmComplete(true)
+      clearTimeout(completeTimeoutRef.current)
+      completeTimeoutRef.current = setTimeout(() => setConfirmComplete(false), 2000)
+    }
   }
 
   const handleDiscard = () => {
@@ -73,8 +82,10 @@ export function WorkoutPage() {
     }
   }
 
+  const hasExercises = workout.exercises.length > 0
+
   return (
-    <div className="p-4 space-y-4">
+    <div className={cn('p-4 space-y-4', hasExercises && 'pb-28')}>
       {/* Header - clean and minimal */}
       <header className="flex items-center justify-between">
         <div>
@@ -117,10 +128,11 @@ export function WorkoutPage() {
 
       {/* Exercise list */}
       <div className="space-y-3">
-        {workout.exercises.map((workoutExercise) => (
+        {workout.exercises.map((workoutExercise, idx) => (
           <ExerciseCard
             key={workoutExercise.id}
             workoutExercise={workoutExercise}
+            index={idx}
           />
         ))}
       </div>
@@ -136,15 +148,18 @@ export function WorkoutPage() {
       </button>
 
       {/* Complete button (sticky at bottom) */}
-      {workout.exercises.length > 0 && (
+      {hasExercises && (
         <div className="fixed bottom-20 left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent pt-8">
           <Button
             size="lg"
-            className="w-full h-12 rounded-xl"
+            className={cn(
+              'w-full h-12 rounded-xl transition-all',
+              confirmComplete && 'bg-green-600 hover:bg-green-700'
+            )}
             onClick={handleComplete}
           >
             <Check className="mr-2 h-5 w-5" />
-            Complete Workout
+            {confirmComplete ? 'Tap again to complete' : 'Complete Workout'}
           </Button>
         </div>
       )}

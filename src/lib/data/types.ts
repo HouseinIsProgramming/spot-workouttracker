@@ -33,6 +33,8 @@ export type Exercise = {
   equipment?: Equipment
 }
 
+export type PRType = 'weight' | 'volume' | 'reps'
+
 export type Set = {
   id: string
   weight: number
@@ -40,6 +42,7 @@ export type Set = {
   rpe?: number
   type: SetType
   completedAt: number
+  prs?: PRType[] // PRs achieved with this set
 }
 
 export type WorkoutExercise = {

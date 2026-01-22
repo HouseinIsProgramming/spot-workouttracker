@@ -3,11 +3,12 @@ import { Home, Dumbbell, History, Library } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useActiveWorkout } from '@/lib/data/hooks'
 
+// Order: History, Library on left | Home, Workout on right (thumb-friendly)
 const navItems = [
-  { to: '/', icon: Home, label: 'Home' },
-  { to: '/workout', icon: Dumbbell, label: 'Workout' },
   { to: '/history', icon: History, label: 'History' },
   { to: '/exercises', icon: Library, label: 'Library' },
+  { to: '/', icon: Home, label: 'Home' },
+  { to: '/workout', icon: Dumbbell, label: 'Workout' },
 ] as const
 
 export function BottomNav() {

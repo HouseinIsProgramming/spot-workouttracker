@@ -1,14 +1,16 @@
 import { useState } from 'react'
-import { Minus, Plus } from 'lucide-react'
+import { Minus, Plus, Trophy } from 'lucide-react'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { useActiveWorkout } from '@/lib/data/hooks'
-import type { SetType } from '@/lib/data/types'
+import { useActiveWorkout, checkForPRs } from '@/lib/data/hooks'
+import type { SetType, PRType } from '@/lib/data/types'
 
 const WEIGHT_INCREMENT = 2.5
 const REP_INCREMENT = 1
 
 type SetInputProps = {
   workoutExerciseId: string
+  exerciseId: string
   defaultWeight: number
   defaultReps: number
 }
@@ -21,7 +23,13 @@ const setTypes: { value: SetType; label: string }[] = [
   { value: 'failure', label: 'Failure' },
 ]
 
-export function SetInput({ workoutExerciseId, defaultWeight, defaultReps }: SetInputProps) {
+const prLabels: Record<PRType, string> = {
+  weight: 'Weight PR!',
+  volume: 'Volume PR!',
+  reps: 'Rep PR!',
+}
+
+export function SetInput({ workoutExerciseId, exerciseId, defaultWeight, defaultReps }: SetInputProps) {
   const { addSet } = useActiveWorkout()
   const [weight, setWeight] = useState<number>(defaultWeight || 0)
   const [reps, setReps] = useState<number>(defaultReps || 10)
@@ -29,8 +37,20 @@ export function SetInput({ workoutExerciseId, defaultWeight, defaultReps }: SetI
 
   const handleComplete = () => {
     if (reps <= 0) return
-    addSet(workoutExerciseId, weight, reps, setType)
-    // Keep values for next set (user usually does same weight)
+
+    // Check for PRs before adding the set
+    const prs = checkForPRs(exerciseId, weight, reps, setType)
+
+    addSet(workoutExerciseId, weight, reps, setType, undefined, prs)
+
+    // Show PR toast if any PRs achieved
+    if (prs.length > 0) {
+      const prText = prs.map((pr) => prLabels[pr]).join(' · ')
+      toast(prText, {
+        icon: <Trophy className="h-5 w-5 text-yellow-500" />,
+        duration: 3000,
+      })
+    }
   }
 
   const incrementWeight = (delta: number) => {

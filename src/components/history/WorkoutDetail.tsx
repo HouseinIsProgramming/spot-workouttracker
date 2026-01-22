@@ -1,10 +1,11 @@
 import { useParams, Link } from '@tanstack/react-router'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Trophy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 import { useWorkout, useExercise, calculateWorkoutVolume } from '@/lib/data/hooks'
-import type { WorkoutExercise, Set } from '@/lib/data/types'
+import type { WorkoutExercise, Set, PRType } from '@/lib/data/types'
 
 export function WorkoutDetail() {
   const { id } = useParams({ from: '/history/$id' })
@@ -136,19 +137,36 @@ function ExerciseDetailCard({ workoutExercise }: { workoutExercise: WorkoutExerc
   )
 }
 
+const prShortLabels: Record<PRType, string> = {
+  weight: 'W',
+  volume: 'V',
+  reps: 'R',
+}
+
 function SetLine({ set, index }: { set: Set; index: number }) {
   const isWarmup = set.type === 'warmup'
+  const hasPRs = set.prs && set.prs.length > 0
 
   return (
     <div
-      className={`flex items-center gap-3 text-sm ${
-        isWarmup ? 'text-muted-foreground' : ''
-      }`}
+      className={cn(
+        'flex items-center gap-3 text-sm py-0.5 px-1 rounded',
+        isWarmup ? 'text-muted-foreground' : '',
+        hasPRs && 'bg-yellow-500/10'
+      )}
     >
       <span className="w-5 text-muted-foreground">{index}</span>
       <span className={isWarmup ? '' : 'font-medium'}>
         {set.weight}kg × {set.reps}
       </span>
+      {hasPRs && (
+        <span className="flex items-center gap-0.5 px-1 py-0.5 rounded bg-yellow-500/20 text-yellow-600 dark:text-yellow-400">
+          <Trophy className="h-2.5 w-2.5" />
+          <span className="text-[9px] font-bold">
+            {set.prs!.map((pr) => prShortLabels[pr]).join('')}
+          </span>
+        </span>
+      )}
       {set.type !== 'normal' && (
         <Badge variant="outline" className="text-[10px] h-4">
           {set.type === 'warmup' ? 'W' : set.type}

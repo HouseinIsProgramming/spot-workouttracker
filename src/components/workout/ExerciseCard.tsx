@@ -9,12 +9,13 @@ import type { WorkoutExercise } from '@/lib/data/types'
 
 type ExerciseCardProps = {
   workoutExercise: WorkoutExercise
+  index: number
 }
 
-export function ExerciseCard({ workoutExercise }: ExerciseCardProps) {
+export function ExerciseCard({ workoutExercise, index }: ExerciseCardProps) {
   const exercise = useExercise(workoutExercise.exerciseId)
   const lastSets = useLastExerciseSets(workoutExercise.exerciseId)
-  const { removeExercise, removeSet, addSet } = useActiveWorkout()
+  const { removeExercise, restoreExercise, removeSet, addSet } = useActiveWorkout()
   const [expanded, setExpanded] = useState(true)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -30,6 +31,10 @@ export function ExerciseCard({ workoutExercise }: ExerciseCardProps) {
 
   const handleDeleteExercise = () => {
     if (confirmDelete) {
+      // Save for undo before removing
+      const savedExercise = { ...workoutExercise }
+      const savedIndex = index
+
       removeExercise(workoutExercise.id)
       setConfirmDelete(false)
 
@@ -37,7 +42,7 @@ export function ExerciseCard({ workoutExercise }: ExerciseCardProps) {
         action: {
           label: 'Undo',
           onClick: () => {
-            // Re-add exercise - this is a simplified undo
+            restoreExercise(savedExercise, savedIndex)
           },
         },
       })
@@ -155,6 +160,7 @@ export function ExerciseCard({ workoutExercise }: ExerciseCardProps) {
           {/* Input for new set */}
           <SetInput
             workoutExerciseId={workoutExercise.id}
+            exerciseId={workoutExercise.exerciseId}
             defaultWeight={defaultWeight}
             defaultReps={defaultReps}
           />
