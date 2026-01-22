@@ -1,0 +1,51 @@
+import { Link, useLocation } from '@tanstack/react-router'
+import { Home, Dumbbell, History, Library } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useActiveWorkout } from '@/lib/data/hooks'
+
+const navItems = [
+  { to: '/', icon: Home, label: 'Home' },
+  { to: '/workout', icon: Dumbbell, label: 'Workout' },
+  { to: '/history', icon: History, label: 'History' },
+  { to: '/exercises', icon: Library, label: 'Library' },
+] as const
+
+export function BottomNav() {
+  const location = useLocation()
+  const { isActive } = useActiveWorkout()
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border safe-area-pb">
+      <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
+        {navItems.map(({ to, icon: Icon, label }) => {
+          const isCurrentPath = location.pathname === to ||
+            (to !== '/' && location.pathname.startsWith(to))
+
+          const showIndicator = to === '/workout' && isActive
+
+          return (
+            <Link
+              key={to}
+              to={to}
+              className={cn(
+                'flex flex-col items-center justify-center w-16 h-full gap-1',
+                'transition-colors duration-150',
+                isCurrentPath
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <div className="relative">
+                <Icon className="h-6 w-6" />
+                {showIndicator && (
+                  <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-primary rounded-full" />
+                )}
+              </div>
+              <span className="text-xs font-medium">{label}</span>
+            </Link>
+          )
+        })}
+      </div>
+    </nav>
+  )
+}
