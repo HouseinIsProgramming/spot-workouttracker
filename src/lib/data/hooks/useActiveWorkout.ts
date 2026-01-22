@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { MuscleGroup, Workout, WorkoutExercise, Set, SetType } from '../types'
+import { addCompletedWorkout } from './useWorkouts'
 
 const STORAGE_KEY = 'workout-tracker-active-workout'
 
@@ -151,14 +152,12 @@ export function useActiveWorkout() {
   }, [])
 
   const completeWorkout = useCallback(() => {
-    setWorkout((prev) => {
-      if (!prev) return prev
-      const completed = { ...prev, completedAt: Date.now() }
-      // TODO: Replace with mutation api.workouts.create(completed)
-      console.log('Workout completed:', completed)
-      return null // Clear active workout
-    })
-  }, [])
+    if (!workout) return
+    const completed = { ...workout, completedAt: Date.now() }
+    // TODO: Replace with mutation api.workouts.create(completed)
+    addCompletedWorkout(completed)
+    setWorkout(null)
+  }, [workout])
 
   const discardWorkout = useCallback(() => {
     setWorkout(null)

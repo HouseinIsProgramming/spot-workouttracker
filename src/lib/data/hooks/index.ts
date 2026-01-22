@@ -8,5 +8,6 @@ export {
   useMuscleStatus,
   getMuscleStatus,
   calculateWorkoutVolume,
+  addCompletedWorkout,
 } from './useWorkouts'
 export { useActiveWorkout } from './useActiveWorkout'

@@ -1,11 +1,58 @@
-import { useMemo } from 'react'
+import { useMemo, useSyncExternalStore } from 'react'
 import { mockWorkouts } from '../workouts'
 import { getExerciseById } from '../exercises'
-import type { MuscleGroup, MuscleStatus, Workout, WorkoutExercise, Set } from '../types'
+import type { MuscleGroup, MuscleStatus, Workout, WorkoutExercise, Set as WorkoutSet } from '../types'
+
+const STORAGE_KEY = 'workout-tracker-completed-workouts'
+
+// Simple store for completed workouts
+let completedWorkouts: Workout[] = []
+let listeners = new Set<() => void>()
+
+function loadFromStorage(): Workout[] {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    return stored ? JSON.parse(stored) : []
+  } catch {
+    return []
+  }
+}
+
+function saveToStorage(workouts: Workout[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(workouts))
+}
+
+// Initialize from localStorage
+completedWorkouts = loadFromStorage()
+
+function subscribe(listener: () => void) {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
+
+function getSnapshot() {
+  return completedWorkouts
+}
+
+function emitChange() {
+  listeners.forEach((listener) => listener())
+}
+
+export function addCompletedWorkout(workout: Workout) {
+  completedWorkouts = [workout, ...completedWorkouts]
+  saveToStorage(completedWorkouts)
+  emitChange()
+}
 
 // TODO: Replace with useQuery(api.workouts.list)
-export function useWorkouts() {
-  return mockWorkouts
+export function useWorkouts(): Workout[] {
+  const completed = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
+
+  return useMemo(() => {
+    // Combine completed workouts with mock data, sort by date
+    const all = [...completed, ...mockWorkouts]
+    return all.sort((a, b) => b.startedAt - a.startedAt)
+  }, [completed])
 }
 
 // TODO: Replace with useQuery(api.workouts.get, { id })
@@ -35,7 +82,7 @@ export function useExerciseHistory(exerciseId: string) {
 }
 
 // Get the most recent sets for an exercise (for smart defaults)
-export function useLastExerciseSets(exerciseId: string): Set[] | undefined {
+export function useLastExerciseSets(exerciseId: string): WorkoutSet[] | undefined {
   const history = useExerciseHistory(exerciseId)
   if (history.length === 0) return undefined
   return history[0].workoutExercise.sets.filter((s) => s.type !== 'warmup')
