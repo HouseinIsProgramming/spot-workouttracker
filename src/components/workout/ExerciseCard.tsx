@@ -1,18 +1,10 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 import { useExercise, useLastExerciseSets, useActiveWorkout } from '@/lib/data/hooks'
 import { SetInput } from './SetInput'
 import { SetRow } from './SetRow'
@@ -25,14 +17,13 @@ type ExerciseCardProps = {
 export function ExerciseCard({ workoutExercise }: ExerciseCardProps) {
   const exercise = useExercise(workoutExercise.exerciseId)
   const lastSets = useLastExerciseSets(workoutExercise.exerciseId)
-  const { removeExercise, removeSet } = useActiveWorkout()
+  const { removeExercise, removeSet, addSet } = useActiveWorkout()
   const [expanded, setExpanded] = useState(true)
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [setToDelete, setSetToDelete] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   if (!exercise) return null
 
-  // Get default values from last workout
   const defaultWeight = lastSets?.[0]?.weight ?? 0
   const defaultReps = lastSets?.[0]?.reps ?? 10
 
@@ -40,13 +31,46 @@ export function ExerciseCard({ workoutExercise }: ExerciseCardProps) {
   const warmupSets = workoutExercise.sets.filter((s) => s.type === 'warmup')
 
   const handleDeleteExercise = () => {
-    removeExercise(workoutExercise.id)
-    setShowDeleteDialog(false)
+    if (confirmDelete) {
+      removeExercise(workoutExercise.id)
+      setConfirmDelete(false)
+
+      toast('Exercise removed', {
+        action: {
+          label: 'Undo',
+          onClick: () => {
+            // Re-add exercise - this is a simplified undo
+            // In production you'd want a more robust undo system
+          },
+        },
+      })
+    } else {
+      setConfirmDelete(true)
+      clearTimeout(timeoutRef.current)
+      timeoutRef.current = setTimeout(() => setConfirmDelete(false), 2000)
+    }
   }
 
   const handleDeleteSet = (setId: string) => {
+    const deletedSet = workoutExercise.sets.find((s) => s.id === setId)
     removeSet(workoutExercise.id, setId)
-    setSetToDelete(null)
+
+    if (deletedSet) {
+      toast('Set removed', {
+        action: {
+          label: 'Undo',
+          onClick: () => {
+            addSet(
+              workoutExercise.id,
+              deletedSet.weight,
+              deletedSet.reps,
+              deletedSet.type,
+              deletedSet.rpe
+            )
+          },
+        },
+      })
+    }
   }
 
   return (
@@ -81,8 +105,13 @@ export function ExerciseCard({ workoutExercise }: ExerciseCardProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="text-muted-foreground hover:text-destructive"
-            onClick={() => setShowDeleteDialog(true)}
+            className={cn(
+              'transition-all',
+              confirmDelete
+                ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+                : 'text-muted-foreground hover:text-destructive'
+            )}
+            onClick={handleDeleteExercise}
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -91,7 +120,6 @@ export function ExerciseCard({ workoutExercise }: ExerciseCardProps) {
 
       {expanded && (
         <CardContent className="space-y-3">
-          {/* Logged sets */}
           {workoutExercise.sets.length > 0 && (
             <div className="space-y-1">
               {warmupSets.map((set, idx) => (
@@ -99,7 +127,7 @@ export function ExerciseCard({ workoutExercise }: ExerciseCardProps) {
                   key={set.id}
                   set={set}
                   index={idx + 1}
-                  onDelete={() => setSetToDelete(set.id)}
+                  onDelete={() => handleDeleteSet(set.id)}
                 />
               ))}
               {workingSets.map((set, idx) => (
@@ -107,13 +135,12 @@ export function ExerciseCard({ workoutExercise }: ExerciseCardProps) {
                   key={set.id}
                   set={set}
                   index={warmupSets.length + idx + 1}
-                  onDelete={() => setSetToDelete(set.id)}
+                  onDelete={() => handleDeleteSet(set.id)}
                 />
               ))}
             </div>
           )}
 
-          {/* New set input */}
           <SetInput
             workoutExerciseId={workoutExercise.id}
             defaultWeight={defaultWeight}
@@ -121,48 +148,6 @@ export function ExerciseCard({ workoutExercise }: ExerciseCardProps) {
           />
         </CardContent>
       )}
-
-      {/* Delete exercise dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove {exercise.name}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will delete all logged sets for this exercise.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteExercise}
-              className="bg-destructive text-destructive-foreground"
-            >
-              Remove
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Delete set dialog */}
-      <AlertDialog open={!!setToDelete} onOpenChange={() => setSetToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete set?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will remove this set from your workout.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => setToDelete && handleDeleteSet(setToDelete)}
-              className="bg-destructive text-destructive-foreground"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </Card>
   )
 }

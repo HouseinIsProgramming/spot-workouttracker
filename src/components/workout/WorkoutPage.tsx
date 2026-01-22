@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { Plus, MoreVertical, Check, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -9,16 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import { cn } from '@/lib/utils'
 import { useActiveWorkout } from '@/lib/data/hooks'
 import { ExerciseCard } from './ExerciseCard'
 import { ExercisePickerDrawer } from './ExercisePickerDrawer'
@@ -30,7 +21,8 @@ export function WorkoutPage() {
   const { workout, isActive, completeWorkout, discardWorkout } = useActiveWorkout()
   const [showExercisePicker, setShowExercisePicker] = useState(false)
   const [showStartDrawer, setShowStartDrawer] = useState(false)
-  const [showDiscardDialog, setShowDiscardDialog] = useState(false)
+  const [confirmDiscard, setConfirmDiscard] = useState(false)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   // No active workout
   if (!isActive || !workout) {
@@ -63,10 +55,15 @@ export function WorkoutPage() {
   }
 
   const handleDiscard = () => {
-    discardWorkout()
-    toast('Workout discarded')
-    setShowDiscardDialog(false)
-    navigate({ to: '/' })
+    if (confirmDiscard) {
+      discardWorkout()
+      toast('Workout discarded')
+      navigate({ to: '/' })
+    } else {
+      setConfirmDiscard(true)
+      clearTimeout(timeoutRef.current)
+      timeoutRef.current = setTimeout(() => setConfirmDiscard(false), 2000)
+    }
   }
 
   return (
@@ -103,11 +100,15 @@ export function WorkoutPage() {
               Complete Workout
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => setShowDiscardDialog(true)}
-              className="text-destructive"
+              onClick={handleDiscard}
+              className={cn(
+                confirmDiscard
+                  ? 'bg-destructive text-destructive-foreground'
+                  : 'text-destructive'
+              )}
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              Discard Workout
+              {confirmDiscard ? 'Tap again to discard' : 'Discard Workout'}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -154,28 +155,6 @@ export function WorkoutPage() {
         workoutFocus={workout.focus}
         exercisesInWorkout={workout.exercises.map((e) => e.exerciseId)}
       />
-
-      {/* Discard Dialog */}
-      <AlertDialog open={showDiscardDialog} onOpenChange={setShowDiscardDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Discard Workout?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will delete all logged sets for this workout. This action
-              cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDiscard}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Discard
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }
