@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useCallback, useSyncExternalStore } from 'react'
 import type { MuscleGroup, Workout, WorkoutExercise, Set, SetType } from '../types'
 import { addCompletedWorkout } from './useWorkouts'
 
@@ -8,7 +8,11 @@ function generateId(): string {
   return Math.random().toString(36).substring(2, 9)
 }
 
-function loadActiveWorkout(): Workout | null {
+// Shared state - single source of truth
+let activeWorkout: Workout | null = null
+let listeners = new Set<() => void>()
+
+function loadFromStorage(): Workout | null {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
     return stored ? JSON.parse(stored) : null
@@ -17,7 +21,7 @@ function loadActiveWorkout(): Workout | null {
   }
 }
 
-function saveActiveWorkout(workout: Workout | null) {
+function saveToStorage(workout: Workout | null) {
   if (workout) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(workout))
   } else {
@@ -25,14 +29,38 @@ function saveActiveWorkout(workout: Workout | null) {
   }
 }
 
+// Initialize from localStorage
+activeWorkout = loadFromStorage()
+
+function subscribe(listener: () => void) {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
+
+function getSnapshot() {
+  return activeWorkout
+}
+
+function emitChange() {
+  listeners.forEach((listener) => listener())
+}
+
+function setActiveWorkout(workout: Workout | null) {
+  activeWorkout = workout
+  saveToStorage(workout)
+  emitChange()
+}
+
+function updateActiveWorkout(updater: (prev: Workout | null) => Workout | null) {
+  const newWorkout = updater(activeWorkout)
+  if (newWorkout !== activeWorkout) {
+    setActiveWorkout(newWorkout)
+  }
+}
+
 // TODO: Replace with Convex mutations and live queries
 export function useActiveWorkout() {
-  const [workout, setWorkout] = useState<Workout | null>(() => loadActiveWorkout())
-
-  // Persist to localStorage on change
-  useEffect(() => {
-    saveActiveWorkout(workout)
-  }, [workout])
+  const workout = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
 
   const startWorkout = useCallback((focus: MuscleGroup[]) => {
     const newWorkout: Workout = {
@@ -41,12 +69,12 @@ export function useActiveWorkout() {
       startedAt: Date.now(),
       exercises: [],
     }
-    setWorkout(newWorkout)
+    setActiveWorkout(newWorkout)
     return newWorkout
   }, [])
 
   const addExercise = useCallback((exerciseId: string) => {
-    setWorkout((prev) => {
+    updateActiveWorkout((prev) => {
       if (!prev) return prev
       const newExercise: WorkoutExercise = {
         id: generateId(),
@@ -61,7 +89,7 @@ export function useActiveWorkout() {
   }, [])
 
   const removeExercise = useCallback((workoutExerciseId: string) => {
-    setWorkout((prev) => {
+    updateActiveWorkout((prev) => {
       if (!prev) return prev
       return {
         ...prev,
@@ -78,7 +106,7 @@ export function useActiveWorkout() {
       type: SetType = 'normal',
       rpe?: number
     ) => {
-      setWorkout((prev) => {
+      updateActiveWorkout((prev) => {
         if (!prev) return prev
         return {
           ...prev,
@@ -109,7 +137,7 @@ export function useActiveWorkout() {
       setId: string,
       updates: Partial<Omit<Set, 'id' | 'completedAt'>>
     ) => {
-      setWorkout((prev) => {
+      updateActiveWorkout((prev) => {
         if (!prev) return prev
         return {
           ...prev,
@@ -129,7 +157,7 @@ export function useActiveWorkout() {
   )
 
   const removeSet = useCallback((workoutExerciseId: string, setId: string) => {
-    setWorkout((prev) => {
+    updateActiveWorkout((prev) => {
       if (!prev) return prev
       return {
         ...prev,
@@ -145,22 +173,21 @@ export function useActiveWorkout() {
   }, [])
 
   const setNotes = useCallback((notes: string) => {
-    setWorkout((prev) => {
+    updateActiveWorkout((prev) => {
       if (!prev) return prev
       return { ...prev, notes }
     })
   }, [])
 
   const completeWorkout = useCallback(() => {
-    if (!workout) return
-    const completed = { ...workout, completedAt: Date.now() }
-    // TODO: Replace with mutation api.workouts.create(completed)
+    if (!activeWorkout) return
+    const completed = { ...activeWorkout, completedAt: Date.now() }
     addCompletedWorkout(completed)
-    setWorkout(null)
-  }, [workout])
+    setActiveWorkout(null)
+  }, [])
 
   const discardWorkout = useCallback(() => {
-    setWorkout(null)
+    setActiveWorkout(null)
   }, [])
 
   return {
