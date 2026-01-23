@@ -1,14 +1,34 @@
-import { useParams, Link } from '@tanstack/react-router'
-import { ArrowLeft } from 'lucide-react'
+import { useState } from 'react'
+import { useParams, Link, useNavigate } from '@tanstack/react-router'
+import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useExercise, useExerciseHistory } from '@/lib/data/hooks'
+import { isCustomExercise, deleteCustomExercise } from '@/lib/data/exercises'
+import { ExerciseFormDrawer } from './ExerciseFormDrawer'
+import { toast } from 'sonner'
 
 export function ExerciseDetail() {
   const { id } = useParams({ from: '/exercises/$id' })
+  const navigate = useNavigate()
   const exercise = useExercise(id)
   const history = useExerciseHistory(id)
+  const [showEditDrawer, setShowEditDrawer] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  const isCustom = exercise ? isCustomExercise(exercise.id) : false
+
+  const handleDelete = () => {
+    if (confirmDelete) {
+      deleteCustomExercise(id)
+      toast.success('Exercise deleted')
+      navigate({ to: '/exercises' })
+    } else {
+      setConfirmDelete(true)
+      setTimeout(() => setConfirmDelete(false), 2000)
+    }
+  }
 
   if (!exercise) {
     return (
@@ -49,8 +69,15 @@ export function ExerciseDetail() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
-        <div>
-          <h1 className="text-xl font-bold">{exercise.name}</h1>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold">{exercise.name}</h1>
+            {isCustom && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                Custom
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-1.5 mt-1 flex-wrap">
             {exercise.muscleGroups.map((muscle) => (
               <Badge key={muscle} variant="secondary" className="capitalize text-xs">
@@ -64,6 +91,25 @@ export function ExerciseDetail() {
             )}
           </div>
         </div>
+        {isCustom && (
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowEditDrawer(true)}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleDelete}
+              className={confirmDelete ? 'text-destructive' : ''}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </header>
 
       {/* Stats */}
@@ -151,6 +197,13 @@ export function ExerciseDetail() {
           </div>
         )}
       </section>
+
+      {/* Edit Drawer */}
+      <ExerciseFormDrawer
+        open={showEditDrawer}
+        onOpenChange={setShowEditDrawer}
+        exercise={exercise}
+      />
     </div>
   )
 }

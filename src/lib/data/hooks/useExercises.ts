@@ -1,10 +1,22 @@
-import { useMemo } from 'react'
-import { exercises, getExerciseById } from '../exercises'
+import { useMemo, useSyncExternalStore } from 'react'
+import { getAllExercises, getExerciseById, subscribeToExercises, getCustomExercises } from '../exercises'
 import type { Exercise, MuscleGroup } from '../types'
 
-// TODO: Replace with useQuery(api.exercises.list)
-export function useExercises() {
-  return exercises
+// Get all exercises (built-in + custom) with reactivity
+export function useExercises(): Exercise[] {
+  return useSyncExternalStore(
+    subscribeToExercises,
+    getAllExercises,
+    getAllExercises
+  )
+}
+
+export function useCustomExercises(): Exercise[] {
+  return useSyncExternalStore(
+    subscribeToExercises,
+    getCustomExercises,
+    getCustomExercises
+  )
 }
 
 export function useExercise(id: string): Exercise | undefined {

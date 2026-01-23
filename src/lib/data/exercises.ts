@@ -1,6 +1,9 @@
 import type { Exercise } from './types'
 
-export const exercises: Exercise[] = [
+const CUSTOM_EXERCISES_KEY = 'workout-tracker-custom-exercises'
+
+// Built-in exercises
+export const builtInExercises: Exercise[] = [
   // Chest
   { id: 'bench-press', name: 'Bench Press', muscleGroups: ['chest', 'triceps', 'shoulders'], equipment: 'barbell' },
   { id: 'incline-bench', name: 'Incline Bench Press', muscleGroups: ['chest', 'shoulders', 'triceps'], equipment: 'barbell' },
@@ -75,6 +78,85 @@ export const exercises: Exercise[] = [
   { id: 'dead-bug', name: 'Dead Bug', muscleGroups: ['core'], equipment: 'bodyweight' },
 ]
 
+// Custom exercises store
+let customExercises: Exercise[] = []
+let allExercisesCache: Exercise[] = []
+let listeners = new Set<() => void>()
+
+function loadCustomExercises(): Exercise[] {
+  try {
+    const stored = localStorage.getItem(CUSTOM_EXERCISES_KEY)
+    return stored ? JSON.parse(stored) : []
+  } catch {
+    return []
+  }
+}
+
+function saveCustomExercises(exercises: Exercise[]) {
+  localStorage.setItem(CUSTOM_EXERCISES_KEY, JSON.stringify(exercises))
+}
+
+// Rebuild the cached array when custom exercises change
+function rebuildCache() {
+  allExercisesCache = [...builtInExercises, ...customExercises]
+}
+
+// Initialize from localStorage
+customExercises = loadCustomExercises()
+rebuildCache()
+
+export function subscribeToExercises(listener: () => void) {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
+
+function emitChange() {
+  rebuildCache()
+  listeners.forEach((listener) => listener())
+}
+
+export function getCustomExercises(): Exercise[] {
+  return customExercises
+}
+
+// Get all exercises (built-in + custom) - returns cached array for useSyncExternalStore
+export function getAllExercises(): Exercise[] {
+  return allExercisesCache
+}
+
 export function getExerciseById(id: string): Exercise | undefined {
-  return exercises.find((e) => e.id === id)
+  return getAllExercises().find((e) => e.id === id)
+}
+
+export function isCustomExercise(id: string): boolean {
+  return customExercises.some((e) => e.id === id)
+}
+
+function generateId(): string {
+  return 'custom-' + Math.random().toString(36).substring(2, 9)
+}
+
+export function addCustomExercise(exercise: Omit<Exercise, 'id'>): Exercise {
+  const newExercise: Exercise = {
+    ...exercise,
+    id: generateId(),
+  }
+  customExercises = [...customExercises, newExercise]
+  saveCustomExercises(customExercises)
+  emitChange()
+  return newExercise
+}
+
+export function updateCustomExercise(id: string, updates: Partial<Omit<Exercise, 'id'>>): void {
+  customExercises = customExercises.map((e) =>
+    e.id === id ? { ...e, ...updates } : e
+  )
+  saveCustomExercises(customExercises)
+  emitChange()
+}
+
+export function deleteCustomExercise(id: string): void {
+  customExercises = customExercises.filter((e) => e.id !== id)
+  saveCustomExercises(customExercises)
+  emitChange()
 }

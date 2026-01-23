@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, Check, Dumbbell } from 'lucide-react'
+import { Search, Check, Dumbbell, Plus } from 'lucide-react'
 import {
   Drawer,
   DrawerContent,
@@ -9,7 +9,8 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { useExerciseSearch, useRecentExerciseIds, useActiveWorkout } from '@/lib/data/hooks'
-import type { MuscleGroup } from '@/lib/data/types'
+import { ExerciseFormDrawer } from '@/components/exercises/ExerciseFormDrawer'
+import type { MuscleGroup, Exercise } from '@/lib/data/types'
 
 type ExercisePickerDrawerProps = {
   open: boolean
@@ -25,6 +26,7 @@ export function ExercisePickerDrawer({
   exercisesInWorkout,
 }: ExercisePickerDrawerProps) {
   const [query, setQuery] = useState('')
+  const [showCreateDrawer, setShowCreateDrawer] = useState(false)
   const recentExerciseIds = useRecentExerciseIds()
   const { addExercise } = useActiveWorkout()
 
@@ -37,6 +39,13 @@ export function ExercisePickerDrawer({
 
   const handleSelect = (exerciseId: string) => {
     addExercise(exerciseId)
+    onOpenChange(false)
+    setQuery('')
+  }
+
+  const handleCreateExercise = (exercise: Exercise) => {
+    addExercise(exercise.id)
+    setShowCreateDrawer(false)
     onOpenChange(false)
     setQuery('')
   }
@@ -117,14 +126,38 @@ export function ExercisePickerDrawer({
                 </button>
               )
             })}
+            {/* Create new option - always shown at bottom */}
+            <button
+              type="button"
+              onClick={() => setShowCreateDrawer(true)}
+              className="w-full text-left p-3 rounded-xl transition-colors flex items-center gap-3 hover:bg-muted/50 active:bg-muted border-2 border-dashed border-border/50 mt-2"
+            >
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 bg-muted">
+                <Plus className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-sm">Create New Exercise</div>
+                <div className="text-xs text-muted-foreground">
+                  {query ? `Add "${query}" to library` : 'Add custom exercise'}
+                </div>
+              </div>
+            </button>
+
             {searchResults.length === 0 && query && (
-              <div className="text-center py-8 text-muted-foreground text-sm">
+              <div className="text-center py-4 text-muted-foreground text-sm">
                 No exercises found for "{query}"
               </div>
             )}
           </div>
         </ScrollArea>
       </DrawerContent>
+
+      {/* Create Exercise Drawer */}
+      <ExerciseFormDrawer
+        open={showCreateDrawer}
+        onOpenChange={setShowCreateDrawer}
+        onSave={handleCreateExercise}
+      />
     </Drawer>
   )
 }
