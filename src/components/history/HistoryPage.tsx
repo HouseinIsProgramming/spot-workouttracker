@@ -161,27 +161,27 @@ export function HistoryPage() {
                       )}
                     >
                       <Link to="/history/$id" params={{ id: workout.id }}>
-                        <div className="p-4 flex items-center gap-3">
+                        <div className="p-4 flex items-center gap-4">
                           {/* Date column */}
-                          <div className="w-12 text-center flex-shrink-0">
-                            <span className="text-lg font-bold">{date.getDate()}</span>
-                            <span className="text-[10px] text-muted-foreground block uppercase">
+                          <div className="w-14 text-center flex-shrink-0 border-r border-border/50 pr-4">
+                            <span className="text-2xl font-bold leading-none">{date.getDate()}</span>
+                            <span className="text-[10px] text-muted-foreground block uppercase mt-1">
                               {date.toLocaleDateString('en-US', { weekday: 'short' })}
                             </span>
                           </div>
 
                           {/* Main info */}
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{focusLabel}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {workout.exercises.length} exercises · {duration}m · {(volume / 1000).toFixed(1)}k kg
+                            <p className="font-semibold truncate">{focusLabel}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {workout.exercises.length} exercise{workout.exercises.length !== 1 ? 's' : ''} · {duration}m · {(volume / 1000).toFixed(1)}k kg
                             </p>
                           </div>
 
                           {/* PR badge */}
                           {prCount > 0 && (
-                            <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 text-xs">
-                              <Trophy className="h-3 w-3" />
+                            <span className="flex items-center gap-1 px-2 py-1 rounded-lg bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 text-xs font-medium">
+                              <Trophy className="h-3.5 w-3.5" />
                               {prCount}
                             </span>
                           )}
@@ -191,10 +191,10 @@ export function HistoryPage() {
                             type="button"
                             onClick={(e) => handleArchive(e, workout.id)}
                             className={cn(
-                              'p-2 rounded-lg transition-colors',
+                              'p-2 rounded-lg transition-colors flex-shrink-0',
                               confirmArchive === workout.id
                                 ? 'text-destructive bg-destructive/10'
-                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                                : 'text-muted-foreground/50 hover:text-foreground hover:bg-muted/50'
                             )}
                             title={confirmArchive === workout.id ? 'Tap again to archive' : 'Archive workout'}
                           >
