@@ -1,13 +1,48 @@
+import { useState } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { Calendar, Dumbbell, RotateCcw, Trophy } from 'lucide-react'
+import { Calendar, Dumbbell, RotateCcw, Trophy, Archive, ChevronDown, ChevronUp, Undo2, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useWorkouts, calculateWorkoutVolume, useActiveWorkout } from '@/lib/data/hooks'
+import { useWorkouts, calculateWorkoutVolume, useActiveWorkout, useArchivedWorkouts, archiveWorkout, restoreWorkout, permanentlyDeleteWorkout } from '@/lib/data/hooks'
 import type { Workout } from '@/lib/data/types'
+import { toast } from 'sonner'
 
 export function HistoryPage() {
   const navigate = useNavigate()
   const workouts = useWorkouts().filter((w) => w.completedAt)
+  const archivedWorkouts = useArchivedWorkouts()
   const { isActive, workout: activeWorkout, startWorkout, addExercise } = useActiveWorkout()
+  const [showArchived, setShowArchived] = useState(false)
+  const [confirmArchive, setConfirmArchive] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+
+  const handleArchive = (e: React.MouseEvent, workoutId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (confirmArchive === workoutId) {
+      archiveWorkout(workoutId)
+      toast.success('Workout archived')
+      setConfirmArchive(null)
+    } else {
+      setConfirmArchive(workoutId)
+      setTimeout(() => setConfirmArchive((curr) => curr === workoutId ? null : curr), 2000)
+    }
+  }
+
+  const handleRestore = (workoutId: string) => {
+    restoreWorkout(workoutId)
+    toast.success('Workout restored')
+  }
+
+  const handleDelete = (workoutId: string) => {
+    if (confirmDelete === workoutId) {
+      permanentlyDeleteWorkout(workoutId)
+      toast.success('Workout permanently deleted')
+      setConfirmDelete(null)
+    } else {
+      setConfirmDelete(workoutId)
+      setTimeout(() => setConfirmDelete((curr) => curr === workoutId ? null : curr), 2000)
+    }
+  }
 
   // Group workouts by week
   const groupedWorkouts = workouts.reduce(
@@ -150,6 +185,21 @@ export function HistoryPage() {
                               {prCount}
                             </span>
                           )}
+
+                          {/* Archive button */}
+                          <button
+                            type="button"
+                            onClick={(e) => handleArchive(e, workout.id)}
+                            className={cn(
+                              'p-2 rounded-lg transition-colors',
+                              confirmArchive === workout.id
+                                ? 'text-destructive bg-destructive/10'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                            )}
+                            title={confirmArchive === workout.id ? 'Tap again to archive' : 'Archive workout'}
+                          >
+                            <Archive className="h-4 w-4" />
+                          </button>
                         </div>
                       </Link>
 
@@ -174,6 +224,74 @@ export function HistoryPage() {
             </section>
           )
         })
+      )}
+
+      {/* Archived section */}
+      {archivedWorkouts.length > 0 && (
+        <section className="pt-4 border-t border-border/50">
+          <button
+            type="button"
+            onClick={() => setShowArchived((v) => !v)}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full"
+          >
+            <Archive className="h-4 w-4" />
+            <span>{archivedWorkouts.length} archived workout{archivedWorkouts.length !== 1 ? 's' : ''}</span>
+            {showArchived ? <ChevronUp className="h-4 w-4 ml-auto" /> : <ChevronDown className="h-4 w-4 ml-auto" />}
+          </button>
+
+          {showArchived && (
+            <div className="mt-3 space-y-2">
+              {archivedWorkouts.map((workout) => {
+                const date = new Date(workout.startedAt)
+                const focusLabel =
+                  workout.focus.length > 0
+                    ? workout.focus.map((m) => m.charAt(0).toUpperCase() + m.slice(1)).join(', ')
+                    : 'Freestyle'
+
+                return (
+                  <div
+                    key={workout.id}
+                    className="bg-muted/30 rounded-xl p-3 flex items-center gap-3"
+                  >
+                    <div className="w-10 text-center flex-shrink-0">
+                      <span className="text-sm font-medium">{date.getDate()}</span>
+                      <span className="text-[10px] text-muted-foreground block uppercase">
+                        {date.toLocaleDateString('en-US', { month: 'short' })}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm truncate">{focusLabel}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {workout.exercises.length} exercises
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRestore(workout.id)}
+                      className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      title="Restore workout"
+                    >
+                      <Undo2 className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(workout.id)}
+                      className={cn(
+                        'p-2 rounded-lg transition-colors',
+                        confirmDelete === workout.id
+                          ? 'text-destructive bg-destructive/20'
+                          : 'text-destructive/70 hover:text-destructive hover:bg-destructive/10'
+                      )}
+                      title={confirmDelete === workout.id ? 'Tap again to delete permanently' : 'Delete permanently'}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </section>
       )}
     </div>
   )

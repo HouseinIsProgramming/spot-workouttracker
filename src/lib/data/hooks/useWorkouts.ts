@@ -44,14 +44,45 @@ export function addCompletedWorkout(workout: Workout) {
   emitChange()
 }
 
+export function archiveWorkout(workoutId: string) {
+  completedWorkouts = completedWorkouts.map((w) =>
+    w.id === workoutId ? { ...w, archivedAt: Date.now() } : w
+  )
+  saveToStorage(completedWorkouts)
+  emitChange()
+}
+
+export function restoreWorkout(workoutId: string) {
+  completedWorkouts = completedWorkouts.map((w) =>
+    w.id === workoutId ? { ...w, archivedAt: undefined } : w
+  )
+  saveToStorage(completedWorkouts)
+  emitChange()
+}
+
+export function permanentlyDeleteWorkout(workoutId: string) {
+  completedWorkouts = completedWorkouts.filter((w) => w.id !== workoutId)
+  saveToStorage(completedWorkouts)
+  emitChange()
+}
+
 // TODO: Replace with useQuery(api.workouts.list)
 export function useWorkouts(): Workout[] {
   const completed = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
 
   return useMemo(() => {
-    // Combine completed workouts with mock data, sort by date
-    const all = [...completed, ...mockWorkouts]
+    // Combine completed workouts with mock data, filter out archived, sort by date
+    const all = [...completed, ...mockWorkouts].filter((w) => !w.archivedAt)
     return all.sort((a, b) => b.startedAt - a.startedAt)
+  }, [completed])
+}
+
+// Get only archived workouts
+export function useArchivedWorkouts(): Workout[] {
+  const completed = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
+
+  return useMemo(() => {
+    return completed.filter((w) => w.archivedAt).sort((a, b) => b.archivedAt! - a.archivedAt!)
   }, [completed])
 }
 
@@ -183,10 +214,11 @@ export type ExercisePRs = {
   maxRepsAtWeight: Record<number, number> // weight -> max reps
 }
 
-// Get the current PRs for an exercise from history
+// Get the current PRs for an exercise from history (excludes archived)
 export function getExercisePRs(exerciseId: string): ExercisePRs {
   // Access the store directly (not a hook, for use in callbacks)
-  const allWorkouts = [...completedWorkouts, ...mockWorkouts]
+  // Exclude archived workouts from PR calculations
+  const allWorkouts = [...completedWorkouts, ...mockWorkouts].filter((w) => !w.archivedAt)
 
   const prs: ExercisePRs = {
     maxWeight: 0,

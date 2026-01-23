@@ -59,6 +59,7 @@ export type Workout = {
   exercises: WorkoutExercise[]
   notes?: string
   editedAt?: number
+  archivedAt?: number // Soft delete timestamp
 }
 
 // Muscle freshness status for dashboard

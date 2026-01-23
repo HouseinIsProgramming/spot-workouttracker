@@ -2,6 +2,7 @@ export { useExercises, useExercise, useExerciseSearch, useExercisesByMuscle } fr
 export {
   useWorkouts,
   useWorkout,
+  useArchivedWorkouts,
   useExerciseHistory,
   useLastExerciseSets,
   useRecentExerciseIds,
@@ -9,6 +10,9 @@ export {
   getMuscleStatus,
   calculateWorkoutVolume,
   addCompletedWorkout,
+  archiveWorkout,
+  restoreWorkout,
+  permanentlyDeleteWorkout,
   checkForPRs,
   getExercisePRs,
 } from './useWorkouts'
