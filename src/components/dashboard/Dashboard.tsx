@@ -75,11 +75,11 @@ export function Dashboard() {
         onOpenChange={setShowStartDrawer}
       />
 
-      {/* Fixed bottom Start Workout button */}
+      {/* Fixed bottom Start Workout button - above nav bar */}
       {!isActive && (
         <div
-          className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent"
-          style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
+          className="fixed left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent"
+          style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))' }}
         >
           <Button
             size="lg"
