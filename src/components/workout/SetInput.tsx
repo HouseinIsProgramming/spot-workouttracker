@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Minus, Plus, Trophy } from 'lucide-react'
+import { Minus, Plus, Trophy, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useActiveWorkout, checkForPRs } from '@/lib/data/hooks'
@@ -15,12 +15,13 @@ type SetInputProps = {
   defaultReps: number
 }
 
-const setTypes: { value: SetType; label: string }[] = [
-  { value: 'normal', label: 'Working' },
-  { value: 'warmup', label: 'Warmup' },
-  { value: 'dropset', label: 'Drop' },
-  { value: 'myorep', label: 'Myo' },
-  { value: 'failure', label: 'Failure' },
+const setTypes: { value: SetType; label: string; short: string }[] = [
+  { value: 'normal', label: 'Working Set', short: 'Working' },
+  { value: 'warmup', label: 'Warmup', short: 'Warmup' },
+  { value: 'dropset', label: 'Drop Set', short: 'Drop' },
+  { value: 'myorep', label: 'Myo Rep', short: 'Myo' },
+  { value: 'failure', label: 'To Failure', short: 'Failure' },
+  { value: 'rest-pause', label: 'Rest-Pause', short: 'RP' },
 ]
 
 const prLabels: Record<PRType, string> = {
@@ -118,31 +119,37 @@ export function SetInput({ workoutExerciseId, exerciseId, defaultWeight, default
         </div>
       </div>
 
-      {/* Set type pills + Log button */}
+      {/* Set type dropdown + Log button */}
       <div className="flex items-center gap-2">
-        <div className="flex-1 flex gap-1 overflow-x-auto pb-1 -mb-1">
-          {setTypes.map(({ value, label }) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setSetType(value)}
-              className={cn(
-                'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all',
-                setType === value
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-              )}
-            >
-              {label}
-            </button>
-          ))}
+        {/* Set type dropdown */}
+        <div className="relative flex-1">
+          <select
+            value={setType}
+            onChange={(e) => setSetType(e.target.value as SetType)}
+            className={cn(
+              'w-full h-10 px-3 pr-8 rounded-xl bg-muted/50 border-0 text-sm font-medium appearance-none cursor-pointer',
+              'focus:outline-none focus:ring-2 focus:ring-primary/20',
+              setType === 'warmup' && 'text-muted-foreground',
+              setType === 'dropset' && 'text-orange-400',
+              setType === 'myorep' && 'text-purple-400',
+              setType === 'failure' && 'text-red-400',
+              setType === 'rest-pause' && 'text-blue-400'
+            )}
+          >
+            {setTypes.map(({ value, label }) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
         </div>
 
         {/* Log button - the main CTA */}
         <button
           type="button"
           onClick={handleComplete}
-          className="h-10 px-6 bg-primary text-primary-foreground font-semibold rounded-full hover:bg-primary/90 active:scale-95 transition-all"
+          className="h-10 px-6 bg-primary text-primary-foreground font-semibold rounded-xl hover:bg-primary/90 active:scale-95 transition-all"
         >
           Log
         </button>
