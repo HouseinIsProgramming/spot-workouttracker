@@ -31,6 +31,8 @@ export type Exercise = {
   name: string
   muscleGroups: MuscleGroup[]
   equipment?: Equipment
+  archivedAt?: number // Soft delete timestamp
+  basedOnId?: string // If this is a modified version of a built-in exercise
 }
 
 export type PRType = 'weight' | 'volume' | 'reps'
@@ -42,6 +44,7 @@ export type Set = {
   rpe?: number
   type: SetType
   completedAt: number
+  checkedAt?: number // When the set was marked as checked/verified
   prs?: PRType[] // PRs achieved with this set
 }
 
