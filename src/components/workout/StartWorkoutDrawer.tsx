@@ -9,19 +9,30 @@ import {
 } from '@/components/ui/drawer'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { useActiveWorkout } from '@/lib/data/hooks'
-import { ALL_MUSCLE_GROUPS, FOCUS_PRESETS, type MuscleGroup } from '@/lib/data/types'
+import { useActiveWorkout, useMuscleStatus } from '@/lib/data/hooks'
+import { ALL_MUSCLE_GROUPS, type MuscleGroup, type MuscleStatus } from '@/lib/data/types'
+import { getQuickStartPresets } from '@/components/settings/SettingsPage'
 
 type StartWorkoutDrawerProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
+const statusColors: Record<MuscleStatus, string> = {
+  'too-recent': 'bg-red-500/80 text-white',
+  'recovering': 'bg-amber-500/80 text-white',
+  'ready': 'bg-green-500/80 text-white',
+  'cold': 'bg-muted/50 text-muted-foreground',
+}
+
 export function StartWorkoutDrawer({ open, onOpenChange }: StartWorkoutDrawerProps) {
   const navigate = useNavigate()
   const { startWorkout } = useActiveWorkout()
+  const muscleStatus = useMuscleStatus()
   const [search, setSearch] = useState('')
   const [selectedFocus, setSelectedFocus] = useState<MuscleGroup[]>([])
+
+  const allPresets = useMemo(() => getQuickStartPresets(), [])
 
   const suggestions = useMemo(() => {
     const query = search.toLowerCase().trim()
@@ -29,8 +40,8 @@ export function StartWorkoutDrawer({ open, onOpenChange }: StartWorkoutDrawerPro
 
     const results: { label: string; muscles: MuscleGroup[] }[] = []
 
-    // Check presets
-    for (const [name, muscles] of Object.entries(FOCUS_PRESETS)) {
+    // Check all presets (built-in + custom)
+    for (const [name, muscles] of Object.entries(allPresets)) {
       if (name.includes(query)) {
         results.push({ label: name, muscles })
       }
@@ -44,7 +55,7 @@ export function StartWorkoutDrawer({ open, onOpenChange }: StartWorkoutDrawerPro
     }
 
     return results.slice(0, 5)
-  }, [search, selectedFocus])
+  }, [search, selectedFocus, allPresets])
 
   const toggleMuscle = (muscle: MuscleGroup) => {
     setSelectedFocus((prev) =>
@@ -127,6 +138,55 @@ export function StartWorkoutDrawer({ open, onOpenChange }: StartWorkoutDrawerPro
             </div>
           )}
 
+          {/* Muscle Recovery Heatmap */}
+          {!search && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Muscle Recovery
+              </p>
+              <div className="grid grid-cols-4 gap-1.5">
+                {ALL_MUSCLE_GROUPS.map((muscle) => {
+                  const { status, hoursSince } = muscleStatus[muscle]
+                  const isSelected = selectedFocus.includes(muscle)
+                  return (
+                    <button
+                      key={muscle}
+                      onClick={() => toggleMuscle(muscle)}
+                      className={cn(
+                        'px-2 py-2 rounded-lg text-xs capitalize transition-all relative',
+                        isSelected
+                          ? 'ring-2 ring-primary ring-offset-1 ring-offset-background'
+                          : '',
+                        statusColors[status]
+                      )}
+                    >
+                      <span className="font-medium">{muscle}</span>
+                      {hoursSince !== null && (
+                        <span className="block text-[10px] opacity-80">
+                          {hoursSince < 24 ? `${hoursSince}h` : `${Math.round(hoursSince / 24)}d`}
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="flex items-center justify-center gap-3 text-[10px] text-muted-foreground pt-1">
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-red-500/80" /> Sore
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-amber-500/80" /> Recovering
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-green-500/80" /> Ready
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-muted" /> Cold
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Quick presets (shown when no search and no selection) */}
           {!search && selectedFocus.length === 0 && (
             <div className="space-y-2">
@@ -134,7 +194,7 @@ export function StartWorkoutDrawer({ open, onOpenChange }: StartWorkoutDrawerPro
                 Quick start
               </p>
               <div className="grid grid-cols-3 gap-2">
-                {Object.entries(FOCUS_PRESETS).slice(0, 6).map(([name, muscles]) => (
+                {Object.entries(allPresets).slice(0, 6).map(([name, muscles]) => (
                   <button
                     key={name}
                     onClick={() => addMuscles(muscles)}
