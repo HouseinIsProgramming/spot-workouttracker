@@ -1,8 +1,9 @@
-import type { Exercise } from './types'
+import type { Exercise, MuscleGroup, Equipment } from './types'
 
 const CUSTOM_EXERCISES_KEY = 'workout-tracker-custom-exercises'
+const ARCHIVED_BUILTIN_KEY = 'workout-tracker-archived-builtin'
 
-// Built-in exercises
+// Built-in exercises (immutable defaults)
 export const builtInExercises: Exercise[] = [
   // Chest
   { id: 'bench-press', name: 'Bench Press', muscleGroups: ['chest', 'triceps', 'shoulders'], equipment: 'barbell' },
@@ -78,8 +79,9 @@ export const builtInExercises: Exercise[] = [
   { id: 'dead-bug', name: 'Dead Bug', muscleGroups: ['core'], equipment: 'bodyweight' },
 ]
 
-// Custom exercises store
+// Stores
 let customExercises: Exercise[] = []
+let archivedBuiltinIds: string[] = []
 let allExercisesCache: Exercise[] = []
 let listeners = new Set<() => void>()
 
@@ -92,17 +94,38 @@ function loadCustomExercises(): Exercise[] {
   }
 }
 
+function loadArchivedBuiltinIds(): string[] {
+  try {
+    const stored = localStorage.getItem(ARCHIVED_BUILTIN_KEY)
+    return stored ? JSON.parse(stored) : []
+  } catch {
+    return []
+  }
+}
+
 function saveCustomExercises(exercises: Exercise[]) {
   localStorage.setItem(CUSTOM_EXERCISES_KEY, JSON.stringify(exercises))
 }
 
-// Rebuild the cached array when custom exercises change
+function saveArchivedBuiltinIds(ids: string[]) {
+  localStorage.setItem(ARCHIVED_BUILTIN_KEY, JSON.stringify(ids))
+}
+
+// Rebuild the cached array when exercises change
 function rebuildCache() {
-  allExercisesCache = [...builtInExercises, ...customExercises]
+  // Active built-in exercises (not archived)
+  const activeBuiltins = builtInExercises.filter(
+    (e) => !archivedBuiltinIds.includes(e.id)
+  )
+  // Active custom exercises (not archived)
+  const activeCustom = customExercises.filter((e) => !e.archivedAt)
+
+  allExercisesCache = [...activeBuiltins, ...activeCustom]
 }
 
 // Initialize from localStorage
 customExercises = loadCustomExercises()
+archivedBuiltinIds = loadArchivedBuiltinIds()
 rebuildCache()
 
 export function subscribeToExercises(listener: () => void) {
@@ -119,17 +142,60 @@ export function getCustomExercises(): Exercise[] {
   return customExercises
 }
 
-// Get all exercises (built-in + custom) - returns cached array for useSyncExternalStore
+// Get all active exercises (built-in + custom, excluding archived)
 export function getAllExercises(): Exercise[] {
   return allExercisesCache
 }
 
+// Get all exercises including archived (for archive view)
+export function getAllExercisesIncludingArchived(): Exercise[] {
+  const archivedBuiltins = builtInExercises
+    .filter((e) => archivedBuiltinIds.includes(e.id))
+    .map((e) => ({ ...e, archivedAt: Date.now() })) // Mark as archived
+  return [...builtInExercises, ...customExercises, ...archivedBuiltins.filter(
+    (ab) => !builtInExercises.some((b) => b.id === ab.id && !archivedBuiltinIds.includes(b.id))
+  )]
+}
+
+// Get only archived exercises
+export function getArchivedExercises(): Exercise[] {
+  const archivedBuiltins = builtInExercises
+    .filter((e) => archivedBuiltinIds.includes(e.id))
+    .map((e) => ({ ...e, archivedAt: Date.now() }))
+  const archivedCustom = customExercises.filter((e) => e.archivedAt)
+  return [...archivedBuiltins, ...archivedCustom]
+}
+
 export function getExerciseById(id: string): Exercise | undefined {
-  return getAllExercises().find((e) => e.id === id)
+  // First check active exercises
+  const active = getAllExercises().find((e) => e.id === id)
+  if (active) return active
+
+  // Then check archived
+  const archivedCustom = customExercises.find((e) => e.id === id && e.archivedAt)
+  if (archivedCustom) return archivedCustom
+
+  // Check archived builtins
+  if (archivedBuiltinIds.includes(id)) {
+    const builtin = builtInExercises.find((e) => e.id === id)
+    if (builtin) return { ...builtin, archivedAt: Date.now() }
+  }
+
+  return undefined
 }
 
 export function isCustomExercise(id: string): boolean {
   return customExercises.some((e) => e.id === id)
+}
+
+export function isBuiltInExercise(id: string): boolean {
+  return builtInExercises.some((e) => e.id === id)
+}
+
+export function isArchivedExercise(id: string): boolean {
+  if (archivedBuiltinIds.includes(id)) return true
+  const custom = customExercises.find((e) => e.id === id)
+  return custom?.archivedAt !== undefined
 }
 
 function generateId(): string {
@@ -155,8 +221,85 @@ export function updateCustomExercise(id: string, updates: Partial<Omit<Exercise,
   emitChange()
 }
 
+// Edit a built-in exercise: archives the original and creates a modified copy
+export function editBuiltInExercise(
+  builtInId: string,
+  updates: { name: string; muscleGroups: MuscleGroup[]; equipment?: Equipment }
+): Exercise {
+  // Archive the built-in
+  if (!archivedBuiltinIds.includes(builtInId)) {
+    archivedBuiltinIds = [...archivedBuiltinIds, builtInId]
+    saveArchivedBuiltinIds(archivedBuiltinIds)
+  }
+
+  // Create a new custom exercise based on it
+  const newExercise: Exercise = {
+    id: generateId(),
+    name: updates.name,
+    muscleGroups: updates.muscleGroups,
+    equipment: updates.equipment,
+    basedOnId: builtInId,
+  }
+  customExercises = [...customExercises, newExercise]
+  saveCustomExercises(customExercises)
+  emitChange()
+  return newExercise
+}
+
 export function deleteCustomExercise(id: string): void {
   customExercises = customExercises.filter((e) => e.id !== id)
   saveCustomExercises(customExercises)
   emitChange()
+}
+
+// Archive an exercise (soft delete)
+export function archiveExercise(id: string): void {
+  if (isBuiltInExercise(id)) {
+    // Archive built-in
+    if (!archivedBuiltinIds.includes(id)) {
+      archivedBuiltinIds = [...archivedBuiltinIds, id]
+      saveArchivedBuiltinIds(archivedBuiltinIds)
+    }
+  } else {
+    // Archive custom
+    customExercises = customExercises.map((e) =>
+      e.id === id ? { ...e, archivedAt: Date.now() } : e
+    )
+    saveCustomExercises(customExercises)
+  }
+  emitChange()
+}
+
+// Restore an archived exercise
+export function restoreExercise(id: string): void {
+  if (archivedBuiltinIds.includes(id)) {
+    // Restore built-in
+    archivedBuiltinIds = archivedBuiltinIds.filter((bid) => bid !== id)
+    saveArchivedBuiltinIds(archivedBuiltinIds)
+
+    // If there's a custom exercise based on this, archive it (user chose to restore original)
+    const customReplacement = customExercises.find((e) => e.basedOnId === id && !e.archivedAt)
+    if (customReplacement) {
+      customExercises = customExercises.map((e) =>
+        e.id === customReplacement.id ? { ...e, archivedAt: Date.now() } : e
+      )
+      saveCustomExercises(customExercises)
+    }
+  } else {
+    // Restore custom
+    customExercises = customExercises.map((e) =>
+      e.id === id ? { ...e, archivedAt: undefined } : e
+    )
+    saveCustomExercises(customExercises)
+  }
+  emitChange()
+}
+
+// Permanently delete a custom exercise (only for archived ones)
+export function permanentlyDeleteExercise(id: string): void {
+  if (isCustomExercise(id)) {
+    customExercises = customExercises.filter((e) => e.id !== id)
+    saveCustomExercises(customExercises)
+    emitChange()
+  }
 }
