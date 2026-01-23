@@ -16,7 +16,7 @@ export default defineConfig({
         short_name: "Workouts",
         description: "Track your workouts with smart defaults",
         theme_color: "#a7c080",
-        background_color: "#2d353b",
+        background_color: "#1e2326",
         display: "standalone",
         orientation: "portrait",
         scope: "/",

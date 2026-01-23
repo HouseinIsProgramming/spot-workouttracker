@@ -40,38 +40,38 @@
     --sidebar-ring: oklch(0.707 0.022 261.325);
 }
 
-/* Everforest Dark Theme */
+/* Everforest Dark Hard Theme */
 .dark {
-    /* Backgrounds - deep greenish grays */
-    --background: #2d353b;
-    --foreground: #d3c6aa;
-    --card: #343f44;
-    --card-foreground: #d3c6aa;
-    --popover: #3d484d;
-    --popover-foreground: #d3c6aa;
+    /* Backgrounds - deeper, darker greens */
+    --background: #1e2326;
+    --foreground: #d8d3ba;
+    --card: #272e33;
+    --card-foreground: #d8d3ba;
+    --popover: #2d353b;
+    --popover-foreground: #d8d3ba;
 
     /* Primary - sage green */
     --primary: #a7c080;
-    --primary-foreground: #2d353b;
+    --primary-foreground: #1e2326;
 
     /* Secondary - muted bg */
-    --secondary: #475258;
-    --secondary-foreground: #d3c6aa;
+    --secondary: #3d484d;
+    --secondary-foreground: #d8d3ba;
 
     /* Muted - subtle backgrounds */
-    --muted: #3d484d;
-    --muted-foreground: #859289;
+    --muted: #2d353b;
+    --muted-foreground: #9da9a0;
 
     /* Accent - aqua tint */
-    --accent: #3d484d;
+    --accent: #2d353b;
     --accent-foreground: #83c092;
 
     /* Destructive - muted red */
     --destructive: #e67e80;
 
     /* Borders and inputs */
-    --border: #475258;
-    --input: #475258;
+    --border: #3d484d;
+    --input: #3d484d;
     --ring: #a7c080;
 
     /* Charts - everforest accent colors */
@@ -82,13 +82,13 @@
     --chart-5: #e69875;
 
     /* Sidebar */
-    --sidebar: #2d353b;
-    --sidebar-foreground: #d3c6aa;
+    --sidebar: #1e2326;
+    --sidebar-foreground: #d8d3ba;
     --sidebar-primary: #a7c080;
-    --sidebar-primary-foreground: #2d353b;
-    --sidebar-accent: #3d484d;
-    --sidebar-accent-foreground: #d3c6aa;
-    --sidebar-border: #475258;
+    --sidebar-primary-foreground: #1e2326;
+    --sidebar-accent: #2d353b;
+    --sidebar-accent-foreground: #d8d3ba;
+    --sidebar-border: #3d484d;
     --sidebar-ring: #a7c080;
 }
 
