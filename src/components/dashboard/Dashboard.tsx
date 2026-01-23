@@ -17,10 +17,10 @@ export function Dashboard() {
     : 0
 
   return (
-    <div className="p-4 space-y-6">
-      {/* Hero section with main CTA */}
-      <section className="pt-2">
-        {isActive ? (
+    <div className="p-4 pb-28 space-y-6">
+      {/* Active workout banner */}
+      {isActive && (
+        <section className="pt-2">
           <Link to="/workout" className="block">
             <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 space-y-3">
               <div className="flex items-center gap-3">
@@ -42,17 +42,8 @@ export function Dashboard() {
               </Button>
             </div>
           </Link>
-        ) : (
-          <Button
-            size="lg"
-            className="w-full h-14 text-base rounded-xl"
-            onClick={() => setShowStartDrawer(true)}
-          >
-            <Play className="mr-2 h-5 w-5" />
-            Start Workout
-          </Button>
-        )}
-      </section>
+        </section>
+      )}
 
       {/* Muscle Recovery Status */}
       <section>
@@ -83,6 +74,23 @@ export function Dashboard() {
         open={showStartDrawer}
         onOpenChange={setShowStartDrawer}
       />
+
+      {/* Fixed bottom Start Workout button */}
+      {!isActive && (
+        <div
+          className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent"
+          style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
+        >
+          <Button
+            size="lg"
+            className="w-full h-14 text-base rounded-xl shadow-lg"
+            onClick={() => setShowStartDrawer(true)}
+          >
+            <Play className="mr-2 h-5 w-5" />
+            Start Workout
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
