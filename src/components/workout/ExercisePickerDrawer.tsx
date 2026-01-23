@@ -52,13 +52,13 @@ export function ExercisePickerDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[85dvh]">
-        <DrawerHeader className="pb-2">
+      <DrawerContent className="max-h-[85dvh] flex flex-col">
+        <DrawerHeader className="pb-2 flex-shrink-0">
           <DrawerTitle className="text-base">Add Exercise</DrawerTitle>
         </DrawerHeader>
 
         {/* Search input */}
-        <div className="px-4 pb-3">
+        <div className="px-4 pb-3 flex-shrink-0">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
@@ -72,7 +72,7 @@ export function ExercisePickerDrawer({
           </div>
         </div>
 
-        <ScrollArea className="flex-1 px-4 pb-4">
+        <ScrollArea className="flex-1 min-h-0 px-4 pb-4">
           <div className="space-y-1">
             {searchResults.map((exercise) => {
               const isInWorkout = exercisesInWorkout.includes(exercise.id)
