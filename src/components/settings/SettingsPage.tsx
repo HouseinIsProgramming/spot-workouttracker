@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { Dumbbell, ChevronRight, X, Plus, RotateCcw } from 'lucide-react'
+import { Dumbbell, ChevronRight, X, Plus, RotateCcw, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { FOCUS_PRESETS, ALL_MUSCLE_GROUPS, type MuscleGroup } from '@/lib/data/types'
+import { useAuth } from '@/lib/auth'
 
 const CUSTOM_PRESETS_KEY = 'workout-tracker-custom-presets'
 
@@ -42,6 +43,7 @@ function isBuiltInPreset(name: string): boolean {
 }
 
 export function SettingsPage() {
+  const { signOut } = useAuth()
   const [customPresets, setCustomPresets] = useState<CustomPreset[]>(loadCustomPresets)
   const [editingPreset, setEditingPreset] = useState<{ name: string; muscles: MuscleGroup[]; isNew: boolean } | null>(null)
   const [newPresetName, setNewPresetName] = useState('')
@@ -283,6 +285,26 @@ export function SettingsPage() {
             </button>
           </div>
         )}
+      </section>
+
+      {/* Account */}
+      <section>
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+          Account
+        </h2>
+        <button
+          type="button"
+          onClick={() => signOut()}
+          className="w-full bg-card rounded-xl border border-border/50 p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors text-left"
+        >
+          <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+            <LogOut className="h-5 w-5 text-destructive" />
+          </div>
+          <div className="flex-1">
+            <p className="font-medium">Sign Out</p>
+            <p className="text-xs text-muted-foreground">Switch accounts or sign out</p>
+          </div>
+        </button>
       </section>
     </div>
   )
