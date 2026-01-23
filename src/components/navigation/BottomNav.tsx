@@ -1,12 +1,12 @@
 import { Link, useLocation } from '@tanstack/react-router'
-import { Home, Dumbbell, History, Library } from 'lucide-react'
+import { Home, Dumbbell, History, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useActiveWorkout } from '@/lib/data/hooks'
 
-// Order: History, Library on left | Home, Workout on right (thumb-friendly)
+// Order: History, Settings on left | Home, Workout on right (thumb-friendly)
 const navItems = [
   { to: '/history', icon: History, label: 'History' },
-  { to: '/exercises', icon: Library, label: 'Library' },
+  { to: '/settings', icon: Settings, label: 'Settings' },
   { to: '/', icon: Home, label: 'Home' },
   { to: '/workout', icon: Dumbbell, label: 'Workout' },
 ] as const

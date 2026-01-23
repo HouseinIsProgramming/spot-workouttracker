@@ -6,6 +6,7 @@ import { HistoryPage } from '@/components/history/HistoryPage'
 import { WorkoutDetail } from '@/components/history/WorkoutDetail'
 import { ExercisesPage } from '@/components/exercises/ExercisesPage'
 import { ExerciseDetail } from '@/components/exercises/ExerciseDetail'
+import { SettingsPage } from '@/components/settings/SettingsPage'
 
 // Root route
 const rootRoute = createRootRoute({
@@ -52,6 +53,13 @@ const exerciseDetailRoute = createRoute({
   component: ExerciseDetail,
 })
 
+// Settings route
+const settingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/settings',
+  component: SettingsPage,
+})
+
 // Build route tree
 const routeTree = rootRoute.addChildren([
   indexRoute,
@@ -60,6 +68,7 @@ const routeTree = rootRoute.addChildren([
   historyDetailRoute,
   exercisesRoute,
   exerciseDetailRoute,
+  settingsRoute,
 ])
 
 // Create router
