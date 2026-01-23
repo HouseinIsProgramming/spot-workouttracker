@@ -1,11 +1,18 @@
 import { useState } from 'react'
 import { useParams, Link, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
+import { ArrowLeft, Pencil, Archive, RotateCcw, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useExercise, useExerciseHistory } from '@/lib/data/hooks'
-import { isCustomExercise, deleteCustomExercise } from '@/lib/data/exercises'
+import {
+  isCustomExercise,
+  isBuiltInExercise,
+  isArchivedExercise,
+  archiveExercise,
+  restoreExercise,
+  permanentlyDeleteExercise,
+} from '@/lib/data/exercises'
 import { ExerciseFormDrawer } from './ExerciseFormDrawer'
 import { toast } from 'sonner'
 
@@ -18,11 +25,24 @@ export function ExerciseDetail() {
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   const isCustom = exercise ? isCustomExercise(exercise.id) : false
+  const isBuiltIn = exercise ? isBuiltInExercise(exercise.id) : false
+  const isArchived = exercise ? isArchivedExercise(exercise.id) : false
 
-  const handleDelete = () => {
+  const handleArchive = () => {
+    archiveExercise(id)
+    toast.success('Exercise archived')
+    navigate({ to: '/exercises' })
+  }
+
+  const handleRestore = () => {
+    restoreExercise(id)
+    toast.success('Exercise restored')
+  }
+
+  const handlePermanentDelete = () => {
     if (confirmDelete) {
-      deleteCustomExercise(id)
-      toast.success('Exercise deleted')
+      permanentlyDeleteExercise(id)
+      toast.success('Exercise deleted permanently')
       navigate({ to: '/exercises' })
     } else {
       setConfirmDelete(true)
@@ -77,6 +97,21 @@ export function ExerciseDetail() {
                 Custom
               </span>
             )}
+            {isBuiltIn && !isArchived && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                Default
+              </span>
+            )}
+            {isArchived && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">
+                Archived
+              </span>
+            )}
+            {exercise.basedOnId && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-500">
+                Modified
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1.5 mt-1 flex-wrap">
             {exercise.muscleGroups.map((muscle) => (
@@ -91,25 +126,50 @@ export function ExerciseDetail() {
             )}
           </div>
         </div>
-        {isCustom && (
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowEditDrawer(true)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleDelete}
-              className={confirmDelete ? 'text-destructive' : ''}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
+        <div className="flex items-center gap-1">
+          {isArchived ? (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleRestore}
+                title="Restore exercise"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+              {isCustom && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handlePermanentDelete}
+                  className={confirmDelete ? 'text-destructive' : ''}
+                  title="Delete permanently"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </>
+          ) : (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowEditDrawer(true)}
+                title="Edit exercise"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleArchive}
+                title="Archive exercise"
+              >
+                <Archive className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+        </div>
       </header>
 
       {/* Stats */}

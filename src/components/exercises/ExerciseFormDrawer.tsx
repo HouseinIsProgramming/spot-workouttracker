@@ -7,8 +7,14 @@ import {
 } from '@/components/ui/drawer'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { addCustomExercise, updateCustomExercise } from '@/lib/data/exercises'
+import {
+  addCustomExercise,
+  updateCustomExercise,
+  editBuiltInExercise,
+  isBuiltInExercise,
+} from '@/lib/data/exercises'
 import { ALL_MUSCLE_GROUPS, type MuscleGroup, type Equipment, type Exercise } from '@/lib/data/types'
+import { toast } from 'sonner'
 
 type ExerciseFormDrawerProps = {
   open: boolean
@@ -38,6 +44,7 @@ export function ExerciseFormDrawer({
   const [equipment, setEquipment] = useState<Equipment | undefined>(undefined)
 
   const isEditing = !!exercise
+  const isEditingBuiltIn = exercise ? isBuiltInExercise(exercise.id) : false
 
   // Reset form when opening/closing or exercise changes
   useEffect(() => {
@@ -66,13 +73,26 @@ export function ExerciseFormDrawer({
     if (!name.trim() || muscleGroups.length === 0) return
 
     if (isEditing && exercise) {
-      updateCustomExercise(exercise.id, {
-        name: name.trim(),
-        muscleGroups,
-        equipment,
-      })
-      onSave?.({ ...exercise, name: name.trim(), muscleGroups, equipment })
+      if (isEditingBuiltIn) {
+        // Editing a built-in: create copy and archive original
+        const newExercise = editBuiltInExercise(exercise.id, {
+          name: name.trim(),
+          muscleGroups,
+          equipment,
+        })
+        toast.success('Created modified version (original archived)')
+        onSave?.(newExercise)
+      } else {
+        // Editing a custom exercise: update in place
+        updateCustomExercise(exercise.id, {
+          name: name.trim(),
+          muscleGroups,
+          equipment,
+        })
+        onSave?.({ ...exercise, name: name.trim(), muscleGroups, equipment })
+      }
     } else {
+      // Creating new exercise
       const newExercise = addCustomExercise({
         name: name.trim(),
         muscleGroups,
@@ -91,8 +111,17 @@ export function ExerciseFormDrawer({
       <DrawerContent className="max-h-[85dvh]">
         <DrawerHeader className="pb-2">
           <DrawerTitle className="text-base">
-            {isEditing ? 'Edit Exercise' : 'Create Exercise'}
+            {isEditing
+              ? isEditingBuiltIn
+                ? 'Modify Default Exercise'
+                : 'Edit Exercise'
+              : 'Create Exercise'}
           </DrawerTitle>
+          {isEditingBuiltIn && (
+            <p className="text-xs text-muted-foreground mt-1">
+              This will create a modified copy. The original will be archived.
+            </p>
+          )}
         </DrawerHeader>
 
         <div className="p-4 space-y-5">
@@ -171,7 +200,11 @@ export function ExerciseFormDrawer({
             onClick={handleSave}
             disabled={!isValid}
           >
-            {isEditing ? 'Save Changes' : 'Create Exercise'}
+            {isEditing
+              ? isEditingBuiltIn
+                ? 'Save as Modified Copy'
+                : 'Save Changes'
+              : 'Create Exercise'}
           </Button>
         </div>
       </DrawerContent>
