@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Minus, Plus, Trophy, ChevronDown } from 'lucide-react'
+import { Minus, Plus, Trophy } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useActiveWorkout, checkForPRs } from '@/lib/data/hooks'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { SetType, PRType } from '@/lib/data/types'
 
 const WEIGHT_INCREMENT = 2.5
@@ -28,6 +29,15 @@ const prLabels: Record<PRType, string> = {
   weight: 'Weight PR!',
   volume: 'Volume PR!',
   reps: 'Rep PR!',
+}
+
+// Scale font size based on character count
+function getInputFontSize(value: number): string {
+  const len = String(value).length
+  if (len <= 2) return 'text-3xl'
+  if (len <= 3) return 'text-2xl'
+  if (len <= 4) return 'text-xl'
+  return 'text-lg'
 }
 
 export function SetInput({ workoutExerciseId, exerciseId, defaultWeight, defaultReps }: SetInputProps) {
@@ -75,14 +85,19 @@ export function SetInput({ workoutExerciseId, exerciseId, defaultWeight, default
           >
             <Minus className="h-5 w-5" />
           </button>
-          <button
-            type="button"
-            onClick={() => incrementWeight(WEIGHT_INCREMENT)}
-            className="flex-1 flex flex-col items-center justify-center py-3 hover:bg-muted/30 active:bg-muted/50 transition-colors"
-          >
-            <span className="text-3xl font-bold tabular-nums tracking-tight">{weight}</span>
+          <div className="flex-1 flex flex-col items-center justify-center py-3">
+            <input
+              type="number"
+              inputMode="decimal"
+              value={weight}
+              onChange={(e) => setWeight(Math.max(0, parseFloat(e.target.value) || 0))}
+              className={cn(
+                'w-full text-center font-bold tabular-nums tracking-tight bg-transparent border-0 outline-none focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
+                getInputFontSize(weight)
+              )}
+            />
             <span className="text-xs text-muted-foreground uppercase tracking-wider">kg</span>
-          </button>
+          </div>
           <button
             type="button"
             onClick={() => incrementWeight(WEIGHT_INCREMENT)}
@@ -101,14 +116,19 @@ export function SetInput({ workoutExerciseId, exerciseId, defaultWeight, default
           >
             <Minus className="h-5 w-5" />
           </button>
-          <button
-            type="button"
-            onClick={() => incrementReps(REP_INCREMENT)}
-            className="flex-1 flex flex-col items-center justify-center py-3 hover:bg-muted/30 active:bg-muted/50 transition-colors"
-          >
-            <span className="text-3xl font-bold tabular-nums tracking-tight">{reps}</span>
+          <div className="flex-1 flex flex-col items-center justify-center py-3">
+            <input
+              type="number"
+              inputMode="numeric"
+              value={reps}
+              onChange={(e) => setReps(Math.max(1, parseInt(e.target.value) || 1))}
+              className={cn(
+                'w-full text-center font-bold tabular-nums tracking-tight bg-transparent border-0 outline-none focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
+                getInputFontSize(reps)
+              )}
+            />
             <span className="text-xs text-muted-foreground uppercase tracking-wider">reps</span>
-          </button>
+          </div>
           <button
             type="button"
             onClick={() => incrementReps(REP_INCREMENT)}
@@ -122,13 +142,10 @@ export function SetInput({ workoutExerciseId, exerciseId, defaultWeight, default
       {/* Set type dropdown + Log button */}
       <div className="flex items-center gap-2">
         {/* Set type dropdown */}
-        <div className="relative flex-1">
-          <select
-            value={setType}
-            onChange={(e) => setSetType(e.target.value as SetType)}
+        <Select value={setType} onValueChange={(v) => setSetType(v as SetType)}>
+          <SelectTrigger
             className={cn(
-              'w-full h-10 px-3 pr-8 rounded-xl bg-muted/50 border-0 text-sm font-medium appearance-none cursor-pointer',
-              'focus:outline-none focus:ring-2 focus:ring-primary/20',
+              'flex-1 h-10 rounded-xl bg-muted/50 border-0 text-sm font-medium',
               setType === 'warmup' && 'text-muted-foreground',
               setType === 'dropset' && 'text-orange-400',
               setType === 'myorep' && 'text-purple-400',
@@ -136,14 +153,26 @@ export function SetInput({ workoutExerciseId, exerciseId, defaultWeight, default
               setType === 'rest-pause' && 'text-blue-400'
             )}
           >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
             {setTypes.map(({ value, label }) => (
-              <option key={value} value={value}>
+              <SelectItem
+                key={value}
+                value={value}
+                className={cn(
+                  value === 'warmup' && 'text-muted-foreground',
+                  value === 'dropset' && 'text-orange-400',
+                  value === 'myorep' && 'text-purple-400',
+                  value === 'failure' && 'text-red-400',
+                  value === 'rest-pause' && 'text-blue-400'
+                )}
+              >
                 {label}
-              </option>
+              </SelectItem>
             ))}
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-        </div>
+          </SelectContent>
+        </Select>
 
         {/* Log button - the main CTA */}
         <button
