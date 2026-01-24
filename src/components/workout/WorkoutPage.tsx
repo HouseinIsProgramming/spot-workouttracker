@@ -21,7 +21,9 @@ export function WorkoutPage() {
   const [showExercisePicker, setShowExercisePicker] = useState(false)
   const [showStartDrawer, setShowStartDrawer] = useState(false)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
+  const [confirmComplete, setConfirmComplete] = useState(false)
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const completeTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   // No active workout
   if (!isActive || !workout) {
@@ -54,9 +56,6 @@ export function WorkoutPage() {
     workout.focus.length > 0
       ? workout.focus.map((m) => m.charAt(0).toUpperCase() + m.slice(1)).join(' + ')
       : 'Freestyle'
-
-  const [confirmComplete, setConfirmComplete] = useState(false)
-  const completeTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   const handleComplete = () => {
     if (confirmComplete) {
