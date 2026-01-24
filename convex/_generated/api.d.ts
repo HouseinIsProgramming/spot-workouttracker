@@ -8,11 +8,13 @@
  * @module
  */
 
+import type * as activeWorkouts from "../activeWorkouts.js";
 import type * as auth from "../auth.js";
 import type * as exercises from "../exercises.js";
 import type * as http from "../http.js";
 import type * as migrations from "../migrations.js";
 import type * as presets from "../presets.js";
+import type * as userSettings from "../userSettings.js";
 import type * as workouts from "../workouts.js";
 
 import type {
@@ -22,11 +24,13 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  activeWorkouts: typeof activeWorkouts;
   auth: typeof auth;
   exercises: typeof exercises;
   http: typeof http;
   migrations: typeof migrations;
   presets: typeof presets;
+  userSettings: typeof userSettings;
   workouts: typeof workouts;
 }>;
 
