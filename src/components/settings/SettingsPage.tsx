@@ -316,8 +316,8 @@ export function SettingsPage() {
         </button>
       </section>
 
-      {/* Dev Tools (collapsible) */}
-      <section>
+      {/* Dev Tools (collapsible) - only in dev */}
+      {import.meta.env.DEV && <section>
         <button
           type="button"
           onClick={() => setShowDevTools(!showDevTools)}
@@ -386,7 +386,7 @@ export function SettingsPage() {
             </button>
           </div>
         )}
-      </section>
+      </section>}
     </div>
   )
 }
