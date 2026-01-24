@@ -15,7 +15,7 @@ type ExerciseCardProps = {
 export function ExerciseCard({ workoutExercise, index }: ExerciseCardProps) {
   const exercise = useExercise(workoutExercise.exerciseId)
   const lastSets = useLastExerciseSets(workoutExercise.exerciseId)
-  const { removeExercise, restoreExercise, removeSet, addSet, updateSet } = useActiveWorkout()
+  const { removeExercise, restoreExercise, removeSet, addSet, updateSet, toggleSetCompletion } = useActiveWorkout()
   const [expanded, setExpanded] = useState(true)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined)
@@ -145,6 +145,7 @@ export function ExerciseCard({ workoutExercise, index }: ExerciseCardProps) {
                   index={idx + 1}
                   onDelete={() => handleDeleteSet(set.id)}
                   onUpdate={(updates) => updateSet(workoutExercise.id, set.id, updates)}
+                  onToggleComplete={() => toggleSetCompletion(workoutExercise.id, set.id)}
                 />
               ))}
               {workingSets.map((set, idx) => (
@@ -154,6 +155,7 @@ export function ExerciseCard({ workoutExercise, index }: ExerciseCardProps) {
                   index={warmupSets.length + idx + 1}
                   onDelete={() => handleDeleteSet(set.id)}
                   onUpdate={(updates) => updateSet(workoutExercise.id, set.id, updates)}
+                  onToggleComplete={() => toggleSetCompletion(workoutExercise.id, set.id)}
                 />
               ))}
             </div>

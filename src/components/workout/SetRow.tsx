@@ -7,7 +7,8 @@ type SetRowProps = {
   set: Set
   index: number
   onDelete?: () => void
-  onUpdate?: (updates: Partial<Omit<Set, 'id' | 'completedAt'>>) => void
+  onUpdate?: (updates: Partial<Omit<Set, 'id'>>) => void
+  onToggleComplete?: () => void // Toggle completedAt
   compact?: boolean // For history view
 }
 
@@ -34,7 +35,7 @@ function getInputFontSize(value: number): string {
   return 'text-xs'
 }
 
-export function SetRow({ set, index, onDelete, onUpdate, compact }: SetRowProps) {
+export function SetRow({ set, index, onDelete, onUpdate, onToggleComplete, compact }: SetRowProps) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editWeight, setEditWeight] = useState(set.weight)
@@ -60,9 +61,10 @@ export function SetRow({ set, index, onDelete, onUpdate, compact }: SetRowProps)
     }
   }
 
-  const handleToggleCheck = () => {
-    if (!onUpdate) return
-    onUpdate({ checkedAt: set.checkedAt ? undefined : Date.now() })
+  const handleToggleComplete = () => {
+    if (onToggleComplete) {
+      onToggleComplete()
+    }
   }
 
   const handleStartEdit = () => {
@@ -91,7 +93,7 @@ export function SetRow({ set, index, onDelete, onUpdate, compact }: SetRowProps)
   }
 
   const isWarmup = set.type === 'warmup'
-  const isChecked = !!set.checkedAt
+  const isCompleted = !!set.completedAt
   const hasPRs = set.prs && set.prs.length > 0
 
   return (
@@ -101,22 +103,22 @@ export function SetRow({ set, index, onDelete, onUpdate, compact }: SetRowProps)
         compact ? 'py-1 px-2' : 'py-2 px-3',
         confirmDelete ? 'bg-destructive/10' : '',
         hasPRs && !confirmDelete && 'bg-yellow-500/5',
-        isChecked && !confirmDelete && !hasPRs && 'bg-primary/5'
+        isCompleted && !confirmDelete && !hasPRs && 'bg-primary/5'
       )}
     >
-      {/* Checkmark toggle */}
-      {onUpdate && (
+      {/* Checkmark toggle - show if we can toggle completion */}
+      {onToggleComplete && (
         <button
           type="button"
-          onClick={handleToggleCheck}
+          onClick={handleToggleComplete}
           className={cn(
             'w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 transition-all',
-            isChecked
+            isCompleted
               ? 'bg-primary text-primary-foreground'
               : 'border-2 border-muted-foreground/30 hover:border-primary/50'
           )}
         >
-          {isChecked && <Check className="h-3.5 w-3.5" />}
+          {isCompleted && <Check className="h-3.5 w-3.5" />}
         </button>
       )}
 
