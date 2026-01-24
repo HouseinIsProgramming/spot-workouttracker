@@ -9,9 +9,15 @@ const setSchema = v.object({
   reps: v.number(),
   rpe: v.optional(v.number()),
   type: v.string(),
-  completedAt: v.number(),
+  completedAt: v.optional(v.number()), // Optional: null = unchecked, timestamp = completed
   checkedAt: v.optional(v.number()),
   prs: v.optional(v.array(v.string())),
+});
+
+// Template exercise (just exercise ID, no sets)
+const templateExerciseSchema = v.object({
+  id: v.string(),
+  exerciseId: v.string(),
 });
 
 // Shared workout exercise schema
@@ -69,5 +75,15 @@ export default defineSchema({
     name: v.string(),
     muscles: v.array(v.string()),
     isBuiltInOverride: v.boolean(),
+  }).index("by_user", ["userId"]),
+
+  // Workout templates (predefined workouts)
+  workoutTemplates: defineTable({
+    userId: v.id("users"),
+    name: v.string(),
+    focus: v.array(v.string()),
+    exercises: v.array(templateExerciseSchema),
+    createdAt: v.number(),
+    updatedAt: v.number(),
   }).index("by_user", ["userId"]),
 });

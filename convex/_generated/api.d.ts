@@ -16,6 +16,7 @@ import type * as http from "../http.js";
 import type * as migrations from "../migrations.js";
 import type * as presets from "../presets.js";
 import type * as userSettings from "../userSettings.js";
+import type * as workoutTemplates from "../workoutTemplates.js";
 import type * as workouts from "../workouts.js";
 
 import type {
@@ -33,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   migrations: typeof migrations;
   presets: typeof presets;
   userSettings: typeof userSettings;
+  workoutTemplates: typeof workoutTemplates;
   workouts: typeof workouts;
 }>;
 

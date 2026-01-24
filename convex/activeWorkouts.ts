@@ -19,12 +19,13 @@ export const get = query({
   },
 });
 
-// Start a new workout
+// Start a new workout (optionally from a template)
 export const start = mutation({
   args: {
     focus: v.array(v.string()),
+    templateId: v.optional(v.id("workoutTemplates")),
   },
-  handler: async (ctx, { focus }) => {
+  handler: async (ctx, { focus, templateId }) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
@@ -38,11 +39,24 @@ export const start = mutation({
       throw new Error("Already have an active workout");
     }
 
+    // If starting from template, pre-fill exercises
+    let exercises: { id: string; exerciseId: string; sets: never[] }[] = [];
+    if (templateId) {
+      const template = await ctx.db.get(templateId);
+      if (template && template.userId === userId) {
+        exercises = template.exercises.map((e) => ({
+          id: generateId(),
+          exerciseId: e.exerciseId,
+          sets: [],
+        }));
+      }
+    }
+
     const id = await ctx.db.insert("activeWorkouts", {
       userId,
       focus,
       startedAt: Date.now(),
-      exercises: [],
+      exercises,
     });
 
     return await ctx.db.get(id);
@@ -123,7 +137,7 @@ export const restoreExercise = mutation({
           reps: v.number(),
           rpe: v.optional(v.number()),
           type: v.string(),
-          completedAt: v.number(),
+          completedAt: v.optional(v.number()),
           checkedAt: v.optional(v.number()),
           prs: v.optional(v.array(v.string())),
         })
@@ -162,8 +176,12 @@ export const addSet = mutation({
     type: v.string(),
     rpe: v.optional(v.number()),
     prs: v.optional(v.array(v.string())),
+    autoComplete: v.optional(v.boolean()), // Default true (freestyle), false for templates
   },
-  handler: async (ctx, { workoutExerciseId, weight, reps, type, rpe, prs }) => {
+  handler: async (
+    ctx,
+    { workoutExerciseId, weight, reps, type, rpe, prs, autoComplete = true }
+  ) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
@@ -180,7 +198,7 @@ export const addSet = mutation({
       reps,
       type,
       rpe,
-      completedAt: Date.now(),
+      completedAt: autoComplete ? Date.now() : undefined,
       prs: prs && prs.length > 0 ? prs : undefined,
     };
 
@@ -195,6 +213,42 @@ export const addSet = mutation({
     await ctx.db.patch(workout._id, { exercises });
 
     return newSet;
+  },
+});
+
+// Toggle set completion status (for checkbox UI)
+export const toggleSetCompletion = mutation({
+  args: {
+    workoutExerciseId: v.string(),
+    setId: v.string(),
+  },
+  handler: async (ctx, { workoutExerciseId, setId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const workout = await ctx.db
+      .query("activeWorkouts")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .first();
+
+    if (!workout) throw new Error("No active workout");
+
+    const exercises = workout.exercises.map((e) => {
+      if (e.id !== workoutExerciseId) return e;
+      return {
+        ...e,
+        sets: e.sets.map((s) => {
+          if (s.id !== setId) return s;
+          // Toggle: if completed, uncomplete; if uncompleted, complete
+          return {
+            ...s,
+            completedAt: s.completedAt ? undefined : Date.now(),
+          };
+        }),
+      };
+    });
+
+    await ctx.db.patch(workout._id, { exercises });
   },
 });
 
