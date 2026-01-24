@@ -159,3 +159,63 @@ export const getExerciseHistory = query({
       .sort((a, b) => b!.workout.startedAt - a!.workout.startedAt);
   },
 });
+
+// Get PRs for a specific exercise
+export const getExercisePRs = query({
+  args: { exerciseId: v.string() },
+  handler: async (ctx, { exerciseId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      return {
+        maxWeight: 0,
+        maxVolume: 0,
+        maxRepsAtWeight: {} as Record<number, number>,
+      };
+    }
+
+    const workouts = await ctx.db
+      .query("workouts")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+
+    const prs = {
+      maxWeight: 0,
+      maxVolume: 0,
+      maxRepsAtWeight: {} as Record<number, number>,
+    };
+
+    for (const workout of workouts) {
+      if (!workout.completedAt || workout.archivedAt) continue;
+
+      const workoutExercise = workout.exercises.find(
+        (e) => e.exerciseId === exerciseId
+      );
+      if (!workoutExercise) continue;
+
+      for (const set of workoutExercise.sets) {
+        if (set.type === "warmup") continue;
+
+        // Track max weight
+        if (set.weight > prs.maxWeight) {
+          prs.maxWeight = set.weight;
+        }
+
+        // Track max volume (weight × reps)
+        const volume = set.weight * set.reps;
+        if (volume > prs.maxVolume) {
+          prs.maxVolume = volume;
+        }
+
+        // Track max reps at each weight
+        if (
+          !prs.maxRepsAtWeight[set.weight] ||
+          set.reps > prs.maxRepsAtWeight[set.weight]
+        ) {
+          prs.maxRepsAtWeight[set.weight] = set.reps;
+        }
+      }
+    }
+
+    return prs;
+  },
+});
