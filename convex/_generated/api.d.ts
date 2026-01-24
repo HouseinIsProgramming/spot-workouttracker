@@ -10,6 +10,7 @@
 
 import type * as activeWorkouts from "../activeWorkouts.js";
 import type * as auth from "../auth.js";
+import type * as devTools from "../devTools.js";
 import type * as exercises from "../exercises.js";
 import type * as http from "../http.js";
 import type * as migrations from "../migrations.js";
@@ -26,6 +27,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   activeWorkouts: typeof activeWorkouts;
   auth: typeof auth;
+  devTools: typeof devTools;
   exercises: typeof exercises;
   http: typeof http;
   migrations: typeof migrations;

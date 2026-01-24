@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { Dumbbell, ChevronRight, X, Plus, RotateCcw, LogOut } from 'lucide-react'
+import { useMutation } from 'convex/react'
+import { api } from '../../../convex/_generated/api'
+import { Dumbbell, ChevronRight, X, Plus, RotateCcw, LogOut, ChevronDown, Wrench, Trash2, Database } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { FOCUS_PRESETS, ALL_MUSCLE_GROUPS, type MuscleGroup } from '@/lib/data/types'
 import { useAuth } from '@/lib/auth'
+import { toast } from 'sonner'
 
 const CUSTOM_PRESETS_KEY = 'workout-tracker-custom-presets'
 
@@ -49,6 +52,12 @@ export function SettingsPage() {
   const [newPresetName, setNewPresetName] = useState('')
   const [newPresetMuscles, setNewPresetMuscles] = useState<MuscleGroup[]>([])
   const [showAddPreset, setShowAddPreset] = useState(false)
+  const [showDevTools, setShowDevTools] = useState(false)
+  const [isAddingData, setIsAddingData] = useState(false)
+  const [isClearingData, setIsClearingData] = useState(false)
+
+  const addSampleData = useMutation(api.devTools.addSampleData)
+  const clearAllData = useMutation(api.devTools.clearAllData)
 
   // Merge built-in and custom presets for display
   const allPresets = Object.entries(FOCUS_PRESETS).map(([name, muscles]) => {
@@ -305,6 +314,78 @@ export function SettingsPage() {
             <p className="text-xs text-muted-foreground">Switch accounts or sign out</p>
           </div>
         </button>
+      </section>
+
+      {/* Dev Tools (collapsible) */}
+      <section>
+        <button
+          type="button"
+          onClick={() => setShowDevTools(!showDevTools)}
+          className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2"
+        >
+          <Wrench className="h-3 w-3" />
+          Dev Stuff
+          <ChevronDown className={cn("h-3 w-3 transition-transform", showDevTools && "rotate-180")} />
+        </button>
+
+        {showDevTools && (
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={async () => {
+                setIsAddingData(true)
+                try {
+                  const result = await addSampleData()
+                  toast.success('Sample data added', {
+                    description: `${result.workoutsAdded} workouts, ${result.exercisesAdded} exercise`,
+                  })
+                } catch (err) {
+                  toast.error('Failed to add sample data')
+                } finally {
+                  setIsAddingData(false)
+                }
+              }}
+              disabled={isAddingData}
+              className="w-full bg-card rounded-xl border border-border/50 p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors text-left disabled:opacity-50"
+            >
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Database className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <p className="font-medium">{isAddingData ? 'Adding...' : 'Add Sample Data'}</p>
+                <p className="text-xs text-muted-foreground">Add 3 sample workouts for testing</p>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={async () => {
+                if (!confirm('This will delete ALL your data. Are you sure?')) return
+                setIsClearingData(true)
+                try {
+                  const result = await clearAllData()
+                  toast.success('All data cleared', {
+                    description: `Deleted ${result.deleted.workouts} workouts, ${result.deleted.exercises} exercises`,
+                  })
+                } catch (err) {
+                  toast.error('Failed to clear data')
+                } finally {
+                  setIsClearingData(false)
+                }
+              }}
+              disabled={isClearingData}
+              className="w-full bg-card rounded-xl border border-destructive/30 p-4 flex items-center gap-3 hover:bg-destructive/5 transition-colors text-left disabled:opacity-50"
+            >
+              <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+                <Trash2 className="h-5 w-5 text-destructive" />
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-destructive">{isClearingData ? 'Clearing...' : 'Clear All Data'}</p>
+                <p className="text-xs text-muted-foreground">Delete all workouts, exercises, and settings</p>
+              </div>
+            </button>
+          </div>
+        )}
       </section>
     </div>
   )
