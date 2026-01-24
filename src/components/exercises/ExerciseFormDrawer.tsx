@@ -7,12 +7,8 @@ import {
 } from '@/components/ui/drawer'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import {
-  addCustomExercise,
-  updateCustomExercise,
-  editBuiltInExercise,
-  isBuiltInExercise,
-} from '@/lib/data/exercises'
+import { isBuiltInExercise } from '@/lib/data/exercises'
+import { useExerciseMutations } from '@/lib/data/hooks'
 import { ALL_MUSCLE_GROUPS, type MuscleGroup, type Equipment, type Exercise } from '@/lib/data/types'
 import { toast } from 'sonner'
 
@@ -44,6 +40,9 @@ export function ExerciseFormDrawer({
   const [name, setName] = useState('')
   const [muscleGroups, setMuscleGroups] = useState<MuscleGroup[]>([])
   const [equipment, setEquipment] = useState<Equipment | undefined>(undefined)
+  const [saving, setSaving] = useState(false)
+
+  const { addCustomExercise, updateCustomExercise, editBuiltInExercise } = useExerciseMutations()
 
   const isEditing = !!exercise
   const isEditingBuiltIn = exercise ? isBuiltInExercise(exercise.id) : false
@@ -71,39 +70,46 @@ export function ExerciseFormDrawer({
     )
   }
 
-  const handleSave = () => {
-    if (!name.trim() || muscleGroups.length === 0) return
+  const handleSave = async () => {
+    if (!name.trim() || muscleGroups.length === 0 || saving) return
 
-    if (isEditing && exercise) {
-      if (isEditingBuiltIn) {
-        // Editing a built-in: create copy and archive original
-        const newExercise = editBuiltInExercise(exercise.id, {
-          name: name.trim(),
-          muscleGroups,
-          equipment,
-        })
-        toast.success('Created modified version (original archived)')
-        onSave?.(newExercise)
+    setSaving(true)
+    try {
+      if (isEditing && exercise) {
+        if (isEditingBuiltIn) {
+          // Editing a built-in: create copy and archive original
+          const newId = await editBuiltInExercise(exercise.id, {
+            name: name.trim(),
+            muscleGroups,
+            equipment,
+          })
+          toast.success('Created modified version (original archived)')
+          onSave?.({ id: newId, name: name.trim(), muscleGroups, equipment })
+        } else {
+          // Editing a custom exercise: update in place
+          await updateCustomExercise(exercise.id, {
+            name: name.trim(),
+            muscleGroups,
+            equipment,
+          })
+          onSave?.({ ...exercise, name: name.trim(), muscleGroups, equipment })
+        }
       } else {
-        // Editing a custom exercise: update in place
-        updateCustomExercise(exercise.id, {
+        // Creating new exercise
+        const newId = await addCustomExercise({
           name: name.trim(),
           muscleGroups,
           equipment,
         })
-        onSave?.({ ...exercise, name: name.trim(), muscleGroups, equipment })
+        onSave?.({ id: newId, name: name.trim(), muscleGroups, equipment })
       }
-    } else {
-      // Creating new exercise
-      const newExercise = addCustomExercise({
-        name: name.trim(),
-        muscleGroups,
-        equipment,
-      })
-      onSave?.(newExercise)
+      onOpenChange(false)
+    } catch (error) {
+      console.error('Failed to save exercise:', error)
+      toast.error('Failed to save exercise')
+    } finally {
+      setSaving(false)
     }
-
-    onOpenChange(false)
   }
 
   const isValid = name.trim().length > 0 && muscleGroups.length > 0
@@ -200,7 +206,7 @@ export function ExerciseFormDrawer({
             size="lg"
             className="w-full h-12 rounded-xl"
             onClick={handleSave}
-            disabled={!isValid}
+            disabled={!isValid || saving}
           >
             {isEditing
               ? isEditingBuiltIn
