@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Minus, Plus, Trophy } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { useActiveWorkout, checkForPRs } from '@/lib/data/hooks'
+import { useActiveWorkout, checkForPRs, useExercisePRs } from '@/lib/data/hooks'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { SetType, PRType } from '@/lib/data/types'
 
@@ -42,9 +42,20 @@ function getInputFontSize(value: number): string {
 
 export function SetInput({ workoutExerciseId, exerciseId, defaultWeight, defaultReps }: SetInputProps) {
   const { addSet } = useActiveWorkout()
-  const [weight, setWeight] = useState<number>(defaultWeight || 0)
-  const [reps, setReps] = useState<number>(defaultReps || 10)
+  const prs = useExercisePRs(exerciseId)
+
+  // Use empty string to show placeholder, actual PR values as fallback
+  const [weightInput, setWeightInput] = useState<string>('')
+  const [repsInput, setRepsInput] = useState<string>('')
   const [setType, setSetType] = useState<SetType>('normal')
+
+  // Placeholder values from PRs or defaults
+  const placeholderWeight = prs.maxWeight > 0 ? prs.maxWeight : (defaultWeight || 0)
+  const placeholderReps = defaultReps || 10
+
+  // Actual values for submission (use input or placeholder)
+  const weight = weightInput !== '' ? parseFloat(weightInput) || 0 : placeholderWeight
+  const reps = repsInput !== '' ? parseInt(repsInput) || 1 : placeholderReps
 
   const handleComplete = () => {
     if (reps <= 0) return
@@ -65,11 +76,13 @@ export function SetInput({ workoutExerciseId, exerciseId, defaultWeight, default
   }
 
   const incrementWeight = (delta: number) => {
-    setWeight((prev) => Math.max(0, prev + delta))
+    const current = weightInput !== '' ? parseFloat(weightInput) || 0 : placeholderWeight
+    setWeightInput(String(Math.max(0, current + delta)))
   }
 
   const incrementReps = (delta: number) => {
-    setReps((prev) => Math.max(1, prev + delta))
+    const current = repsInput !== '' ? parseInt(repsInput) || 1 : placeholderReps
+    setRepsInput(String(Math.max(1, current + delta)))
   }
 
   return (
@@ -89,11 +102,12 @@ export function SetInput({ workoutExerciseId, exerciseId, defaultWeight, default
             <input
               type="number"
               inputMode="decimal"
-              value={weight}
-              onChange={(e) => setWeight(Math.max(0, parseFloat(e.target.value) || 0))}
+              value={weightInput}
+              onChange={(e) => setWeightInput(e.target.value)}
+              placeholder={String(placeholderWeight)}
               className={cn(
-                'w-full text-center font-bold tabular-nums tracking-tight bg-transparent border-0 outline-none focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
-                getInputFontSize(weight)
+                'w-full text-center font-bold tabular-nums tracking-tight bg-transparent border-0 outline-none focus:ring-0 placeholder:text-muted-foreground/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
+                getInputFontSize(weightInput !== '' ? parseFloat(weightInput) || 0 : placeholderWeight)
               )}
             />
             <span className="text-xs text-muted-foreground uppercase tracking-wider">kg</span>
@@ -120,11 +134,12 @@ export function SetInput({ workoutExerciseId, exerciseId, defaultWeight, default
             <input
               type="number"
               inputMode="numeric"
-              value={reps}
-              onChange={(e) => setReps(Math.max(1, parseInt(e.target.value) || 1))}
+              value={repsInput}
+              onChange={(e) => setRepsInput(e.target.value)}
+              placeholder={String(placeholderReps)}
               className={cn(
-                'w-full text-center font-bold tabular-nums tracking-tight bg-transparent border-0 outline-none focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
-                getInputFontSize(reps)
+                'w-full text-center font-bold tabular-nums tracking-tight bg-transparent border-0 outline-none focus:ring-0 placeholder:text-muted-foreground/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
+                getInputFontSize(repsInput !== '' ? parseInt(repsInput) || 1 : placeholderReps)
               )}
             />
             <span className="text-xs text-muted-foreground uppercase tracking-wider">reps</span>
