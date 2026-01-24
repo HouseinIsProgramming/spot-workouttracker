@@ -75,7 +75,6 @@ export const FOCUS_PRESETS: Record<string, MuscleGroup[]> = {
   legs: ['legs', 'glutes'],
   upper: ['chest', 'back', 'shoulders', 'biceps', 'triceps'],
   lower: ['legs', 'glutes', 'core'],
-  'full body': ['chest', 'back', 'shoulders', 'biceps', 'triceps', 'legs', 'core', 'glutes'],
 }
 
 export const ALL_MUSCLE_GROUPS: MuscleGroup[] = [
