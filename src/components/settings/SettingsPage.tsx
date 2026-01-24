@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { useMutation } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
-import { Dumbbell, ChevronRight, X, Plus, RotateCcw, LogOut, ChevronDown, Wrench, Trash2, Database } from 'lucide-react'
+import { Dumbbell, ChevronRight, X, Plus, RotateCcw, LogOut, ChevronDown, Wrench, Trash2, Database, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { FOCUS_PRESETS, ALL_MUSCLE_GROUPS, type MuscleGroup } from '@/lib/data/types'
 import { useAuth } from '@/lib/auth'
@@ -157,6 +157,19 @@ export function SettingsPage() {
             <div className="flex-1">
               <p className="font-medium">Exercise Library</p>
               <p className="text-xs text-muted-foreground">Browse and create exercises</p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </div>
+        </Link>
+
+        <Link to="/templates">
+          <div className="bg-card rounded-xl border border-border/50 p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors mt-2">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <FileText className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium">Workout Templates</p>
+              <p className="text-xs text-muted-foreground">Pre-plan your workouts</p>
             </div>
             <ChevronRight className="h-5 w-5 text-muted-foreground" />
           </div>
