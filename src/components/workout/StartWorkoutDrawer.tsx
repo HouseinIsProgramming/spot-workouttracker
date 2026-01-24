@@ -9,9 +9,11 @@ import {
 } from '@/components/ui/drawer'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { useActiveWorkout, useMuscleStatus } from '@/lib/data/hooks'
+import { useActiveWorkout, useMuscleStatus, useTemplates } from '@/lib/data/hooks'
 import { ALL_MUSCLE_GROUPS, type MuscleGroup, type MuscleStatus } from '@/lib/data/types'
 import { getQuickStartPresets } from '@/components/settings/SettingsPage'
+import { FileText } from 'lucide-react'
+import type { Id } from '../../../convex/_generated/dataModel'
 
 type StartWorkoutDrawerProps = {
   open: boolean
@@ -29,8 +31,12 @@ export function StartWorkoutDrawer({ open, onOpenChange }: StartWorkoutDrawerPro
   const navigate = useNavigate()
   const { startWorkout } = useActiveWorkout()
   const muscleStatus = useMuscleStatus()
+  const { templates } = useTemplates()
   const [search, setSearch] = useState('')
   const [selectedFocus, setSelectedFocus] = useState<MuscleGroup[]>([])
+  const [selectedTemplateId, setSelectedTemplateId] = useState<Id<"workoutTemplates"> | null>(null)
+
+  const selectedTemplate = templates.find((t) => t.id === selectedTemplateId)
 
   const allPresets = useMemo(() => getQuickStartPresets(), [])
 
@@ -58,6 +64,7 @@ export function StartWorkoutDrawer({ open, onOpenChange }: StartWorkoutDrawerPro
   }, [search, selectedFocus, allPresets])
 
   const toggleMuscle = (muscle: MuscleGroup) => {
+    setSelectedTemplateId(null) // Clear template when manually selecting muscles
     setSelectedFocus((prev) =>
       prev.includes(muscle)
         ? prev.filter((m) => m !== muscle)
@@ -66,6 +73,7 @@ export function StartWorkoutDrawer({ open, onOpenChange }: StartWorkoutDrawerPro
   }
 
   const addMuscles = (muscles: MuscleGroup[]) => {
+    setSelectedTemplateId(null) // Clear template when manually selecting muscles
     setSelectedFocus((prev) => {
       const newSet = new Set([...prev, ...muscles])
       return Array.from(newSet)
@@ -73,10 +81,20 @@ export function StartWorkoutDrawer({ open, onOpenChange }: StartWorkoutDrawerPro
     setSearch('')
   }
 
+  const selectTemplate = (templateId: Id<"workoutTemplates">) => {
+    const template = templates.find((t) => t.id === templateId)
+    if (template) {
+      setSelectedTemplateId(templateId)
+      setSelectedFocus(template.focus as MuscleGroup[])
+      setSearch('')
+    }
+  }
+
   const handleStart = () => {
-    startWorkout(selectedFocus)
+    startWorkout(selectedFocus, selectedTemplateId ?? undefined)
     onOpenChange(false)
     setSelectedFocus([])
+    setSelectedTemplateId(null)
     setSearch('')
     navigate({ to: '/workout' })
   }
@@ -117,8 +135,65 @@ export function StartWorkoutDrawer({ open, onOpenChange }: StartWorkoutDrawerPro
             </div>
           )}
 
+          {/* Templates section */}
+          {!search && templates.length > 0 && !selectedTemplateId && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Your Templates
+              </p>
+              <div className="space-y-1.5">
+                {templates.slice(0, 4).map((template) => (
+                  <button
+                    key={template.id}
+                    onClick={() => selectTemplate(template.id)}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors text-left"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <FileText className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{template.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {template.exercises.length} exercise{template.exercises.length !== 1 ? 's' : ''}
+                        {template.focus.length > 0 && (
+                          <> · {template.focus.map((m) => m.charAt(0).toUpperCase() + m.slice(1)).join(', ')}</>
+                        )}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Selected template indicator */}
+          {selectedTemplate && (
+            <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+                  <FileText className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm">{selectedTemplate.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedTemplate.exercises.length} exercises pre-loaded
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setSelectedTemplateId(null)
+                    setSelectedFocus([])
+                  }}
+                  className="p-1.5 rounded text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Selected focus */}
-          {selectedFocus.length > 0 && (
+          {selectedFocus.length > 0 && !selectedTemplateId && (
             <div className="space-y-2">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Training today
@@ -212,14 +287,16 @@ export function StartWorkoutDrawer({ open, onOpenChange }: StartWorkoutDrawerPro
             size="lg"
             className={cn(
               'w-full h-12 rounded-xl',
-              selectedFocus.length === 0 && 'bg-muted text-muted-foreground hover:bg-muted'
+              !selectedTemplateId && selectedFocus.length === 0 && 'bg-muted text-muted-foreground hover:bg-muted'
             )}
             onClick={handleStart}
           >
             <Play className="mr-2 h-4 w-4" />
-            {selectedFocus.length > 0
-              ? `Start ${selectedFocus.map((m) => m.charAt(0).toUpperCase() + m.slice(1)).join(' + ')}`
-              : 'Start Freestyle'}
+            {selectedTemplate
+              ? `Start ${selectedTemplate.name}`
+              : selectedFocus.length > 0
+                ? `Start ${selectedFocus.map((m) => m.charAt(0).toUpperCase() + m.slice(1)).join(' + ')}`
+                : 'Start Freestyle'}
           </Button>
         </div>
       </DrawerContent>
