@@ -292,7 +292,15 @@ export function useExercisePRs(exerciseId: string): ExercisePRs {
     if (!prs) {
       return emptyPRs;
     }
-    return prs as ExercisePRs;
+    // Handle backwards compatibility with old PR format
+    return {
+      maxWeight: prs.maxWeight ?? 0,
+      maxWeightReps: prs.maxWeightReps ?? 0,
+      strength: prs.strength ?? { weight: 0, reps: 0 },
+      hypertrophy: prs.hypertrophy ?? { weight: 0, reps: 0 },
+      endurance: prs.endurance ?? { weight: 0, reps: 0 },
+      maxRepsAtWeight: prs.maxRepsAtWeight ?? {},
+    };
   }, [prs]);
 }
 
