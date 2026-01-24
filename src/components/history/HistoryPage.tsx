@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Calendar, Dumbbell, RotateCcw, Trophy, Archive, ChevronDown, ChevronUp, Undo2, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useWorkouts, calculateWorkoutVolume, useActiveWorkout, useArchivedWorkouts, archiveWorkout, restoreWorkout, permanentlyDeleteWorkout } from '@/lib/data/hooks'
+import { useWorkouts, calculateWorkoutVolume, useActiveWorkout, useArchivedWorkouts, useWorkoutMutations } from '@/lib/data/hooks'
 import type { Workout } from '@/lib/data/types'
 import { toast } from 'sonner'
 
@@ -11,6 +11,7 @@ export function HistoryPage() {
   const workouts = useWorkouts().filter((w) => w.completedAt)
   const archivedWorkouts = useArchivedWorkouts()
   const { isActive, workout: activeWorkout, startWorkout, addExercise } = useActiveWorkout()
+  const { archiveWorkout, restoreWorkout, permanentlyDeleteWorkout } = useWorkoutMutations()
   const [showArchived, setShowArchived] = useState(false)
   const [confirmArchive, setConfirmArchive] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
