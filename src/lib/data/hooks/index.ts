@@ -29,3 +29,4 @@ export {
 } from './useWorkouts'
 export { useActiveWorkout } from './useActiveWorkout'
 export { useTemplates, type WorkoutTemplate } from './useTemplates'
+export { usePresets, isBuiltInPreset, type CustomPreset, type DisplayPreset } from './usePresets'

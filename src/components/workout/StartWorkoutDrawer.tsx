@@ -9,9 +9,8 @@ import {
 } from '@/components/ui/drawer'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { useActiveWorkout, useMuscleStatus, useTemplates } from '@/lib/data/hooks'
+import { useActiveWorkout, useMuscleStatus, useTemplates, usePresets } from '@/lib/data/hooks'
 import { ALL_MUSCLE_GROUPS, type MuscleGroup, type MuscleStatus } from '@/lib/data/types'
-import { getQuickStartPresets } from '@/components/settings/SettingsPage'
 import { FileText } from 'lucide-react'
 import type { Id } from '../../../convex/_generated/dataModel'
 
@@ -32,13 +31,12 @@ export function StartWorkoutDrawer({ open, onOpenChange }: StartWorkoutDrawerPro
   const { startWorkout } = useActiveWorkout()
   const muscleStatus = useMuscleStatus()
   const { templates } = useTemplates()
+  const { quickStartPresets } = usePresets()
   const [search, setSearch] = useState('')
   const [selectedFocus, setSelectedFocus] = useState<MuscleGroup[]>([])
   const [selectedTemplateId, setSelectedTemplateId] = useState<Id<"workoutTemplates"> | null>(null)
 
   const selectedTemplate = templates.find((t) => t.id === selectedTemplateId)
-
-  const allPresets = useMemo(() => getQuickStartPresets(), [])
 
   const suggestions = useMemo(() => {
     const query = search.toLowerCase().trim()
@@ -47,7 +45,7 @@ export function StartWorkoutDrawer({ open, onOpenChange }: StartWorkoutDrawerPro
     const results: { label: string; muscles: MuscleGroup[] }[] = []
 
     // Check all presets (built-in + custom)
-    for (const [name, muscles] of Object.entries(allPresets)) {
+    for (const [name, muscles] of Object.entries(quickStartPresets)) {
       if (name.includes(query)) {
         results.push({ label: name, muscles })
       }
@@ -61,7 +59,7 @@ export function StartWorkoutDrawer({ open, onOpenChange }: StartWorkoutDrawerPro
     }
 
     return results.slice(0, 5)
-  }, [search, selectedFocus, allPresets])
+  }, [search, selectedFocus, quickStartPresets])
 
   const toggleMuscle = (muscle: MuscleGroup) => {
     setSelectedTemplateId(null) // Clear template when manually selecting muscles

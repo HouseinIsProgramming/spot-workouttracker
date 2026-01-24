@@ -6,48 +6,19 @@ import { Dumbbell, ChevronRight, X, Plus, RotateCcw, LogOut, ChevronDown, Wrench
 import { cn } from '@/lib/utils'
 import { FOCUS_PRESETS, ALL_MUSCLE_GROUPS, type MuscleGroup } from '@/lib/data/types'
 import { useAuth } from '@/lib/auth'
+import { usePresets, isBuiltInPreset } from '@/lib/data/hooks'
 import { toast } from 'sonner'
 
-const CUSTOM_PRESETS_KEY = 'workout-tracker-custom-presets'
-
-type CustomPreset = {
-  name: string
-  muscles: MuscleGroup[]
-  isBuiltInOverride?: boolean // true if this overrides a built-in preset
-}
-
-// Load/save custom presets from localStorage
-function loadCustomPresets(): CustomPreset[] {
-  try {
-    const stored = localStorage.getItem(CUSTOM_PRESETS_KEY)
-    return stored ? JSON.parse(stored) : []
-  } catch {
-    return []
-  }
-}
-
-function saveCustomPresets(presets: CustomPreset[]) {
-  localStorage.setItem(CUSTOM_PRESETS_KEY, JSON.stringify(presets))
-}
-
+// Re-export for StartWorkoutDrawer compatibility
 export function getQuickStartPresets(): Record<string, MuscleGroup[]> {
-  const custom = loadCustomPresets()
-  const customMap: Record<string, MuscleGroup[]> = {}
-  custom.forEach((p) => {
-    customMap[p.name] = p.muscles
-  })
-  // Custom presets override built-in ones with same name
-  return { ...FOCUS_PRESETS, ...customMap }
-}
-
-// Check if a preset name is a built-in one
-function isBuiltInPreset(name: string): boolean {
-  return Object.keys(FOCUS_PRESETS).includes(name)
+  // This is a fallback for non-hook contexts - returns only built-ins
+  // Components should use usePresets().quickStartPresets instead
+  return { ...FOCUS_PRESETS }
 }
 
 export function SettingsPage() {
   const { signOut } = useAuth()
-  const [customPresets, setCustomPresets] = useState<CustomPreset[]>(loadCustomPresets)
+  const { allPresets, savePreset, deletePreset, resetToDefault } = usePresets()
   const [editingPreset, setEditingPreset] = useState<{ name: string; muscles: MuscleGroup[]; isNew: boolean } | null>(null)
   const [newPresetName, setNewPresetName] = useState('')
   const [newPresetMuscles, setNewPresetMuscles] = useState<MuscleGroup[]>([])
@@ -55,72 +26,47 @@ export function SettingsPage() {
   const [showDevTools, setShowDevTools] = useState(false)
   const [isAddingData, setIsAddingData] = useState(false)
   const [isClearingData, setIsClearingData] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
   const addSampleData = useMutation(api.devTools.addSampleData)
   const clearAllData = useMutation(api.devTools.clearAllData)
 
-  // Merge built-in and custom presets for display
-  const allPresets = Object.entries(FOCUS_PRESETS).map(([name, muscles]) => {
-    const customOverride = customPresets.find((p) => p.name === name)
-    return {
-      name,
-      muscles: customOverride ? customOverride.muscles : muscles,
-      isBuiltIn: true,
-      isModified: !!customOverride,
-    }
-  }).concat(
-    customPresets
-      .filter((p) => !isBuiltInPreset(p.name))
-      .map((p) => ({
-        name: p.name,
-        muscles: p.muscles,
-        isBuiltIn: false,
-        isModified: false,
-      }))
-  )
-
-  const handleSavePreset = () => {
-    if (!newPresetName.trim() || newPresetMuscles.length === 0) return
+  const handleSavePreset = async () => {
+    if (!newPresetName.trim() || newPresetMuscles.length === 0 || isSaving) return
 
     const name = newPresetName.trim().toLowerCase()
-    const isBuiltIn = isBuiltInPreset(name)
 
-    const newPreset: CustomPreset = {
-      name,
-      muscles: newPresetMuscles,
-      isBuiltInOverride: isBuiltIn,
+    setIsSaving(true)
+    try {
+      await savePreset(name, newPresetMuscles)
+      setShowAddPreset(false)
+      setEditingPreset(null)
+      setNewPresetName('')
+      setNewPresetMuscles([])
+    } catch (error) {
+      console.error('Failed to save preset:', error)
+      toast.error('Failed to save preset')
+    } finally {
+      setIsSaving(false)
     }
-
-    // Check if we're updating an existing custom preset or adding new
-    const existingIndex = customPresets.findIndex((p) => p.name === name)
-    let updated: CustomPreset[]
-
-    if (existingIndex >= 0) {
-      updated = customPresets.map((p) => (p.name === name ? newPreset : p))
-    } else {
-      updated = [...customPresets, newPreset]
-    }
-
-    setCustomPresets(updated)
-    saveCustomPresets(updated)
-    setShowAddPreset(false)
-    setEditingPreset(null)
-    setNewPresetName('')
-    setNewPresetMuscles([])
   }
 
-  const handleDeletePreset = (name: string) => {
-    // Only delete custom presets (not built-in overrides restoration)
-    const updated = customPresets.filter((p) => p.name !== name)
-    setCustomPresets(updated)
-    saveCustomPresets(updated)
+  const handleDeletePreset = async (name: string) => {
+    try {
+      await deletePreset(name)
+    } catch (error) {
+      console.error('Failed to delete preset:', error)
+      toast.error('Failed to delete preset')
+    }
   }
 
-  const handleResetToDefault = (name: string) => {
-    // Remove the custom override to restore built-in default
-    const updated = customPresets.filter((p) => p.name !== name)
-    setCustomPresets(updated)
-    saveCustomPresets(updated)
+  const handleResetToDefault = async (name: string) => {
+    try {
+      await resetToDefault(name)
+    } catch (error) {
+      console.error('Failed to reset preset:', error)
+      toast.error('Failed to reset preset')
+    }
   }
 
   const handleEditPreset = (preset: { name: string; muscles: MuscleGroup[] }) => {
@@ -300,10 +246,10 @@ export function SettingsPage() {
             <button
               type="button"
               onClick={handleSavePreset}
-              disabled={!newPresetName.trim() || newPresetMuscles.length === 0}
+              disabled={!newPresetName.trim() || newPresetMuscles.length === 0 || isSaving}
               className="w-full h-10 rounded-lg bg-primary text-primary-foreground font-medium text-sm disabled:opacity-50"
             >
-              {editingPreset ? 'Save Changes' : 'Create Preset'}
+              {isSaving ? 'Saving...' : editingPreset ? 'Save Changes' : 'Create Preset'}
             </button>
           </div>
         )}
