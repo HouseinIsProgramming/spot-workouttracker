@@ -227,7 +227,8 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { ExerciseFormDrawer } from '@/components/exercises/ExerciseFormDrawer'
+import type { Exercise } from '@/lib/data/types'
 
 type TemplateExercisePickerProps = {
   open: boolean
@@ -245,6 +246,7 @@ function TemplateExercisePicker({
   excludeIds,
 }: TemplateExercisePickerProps) {
   const [query, setQuery] = useState('')
+  const [showCreateDrawer, setShowCreateDrawer] = useState(false)
 
   const searchResults = useExerciseSearch({
     query,
@@ -253,8 +255,22 @@ function TemplateExercisePicker({
     recentExerciseIds: [],
   })
 
+  // Show create button prominently when no good matches
+  const hasQuery = query.trim().length > 0
+  const hasCloseMatch = hasQuery && searchResults.some((e) =>
+    e.name.toLowerCase().includes(query.toLowerCase()) ||
+    query.toLowerCase().includes(e.name.toLowerCase())
+  )
+  const showCreateProminent = hasQuery && (!hasCloseMatch || searchResults.length === 0)
+
   const handleSelect = (exerciseId: string) => {
     onSelect(exerciseId)
+    setQuery('')
+  }
+
+  const handleCreateExercise = (exercise: Exercise) => {
+    onSelect(exercise.id)
+    setShowCreateDrawer(false)
     setQuery('')
   }
 
@@ -279,8 +295,25 @@ function TemplateExercisePicker({
           </div>
         </div>
 
-        <ScrollArea className="flex-1 min-h-0 px-4 pb-4">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-4">
           <div className="space-y-1">
+            {/* Prominent "Create" button when no good matches */}
+            {showCreateProminent && (
+              <button
+                type="button"
+                onClick={() => setShowCreateDrawer(true)}
+                className="w-full text-left p-3 rounded-xl transition-colors flex items-center gap-3 bg-primary/10 hover:bg-primary/20 active:bg-primary/25 border border-primary/20 mb-2"
+              >
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 bg-primary/20">
+                  <Plus className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm text-primary">Create "{query}"</div>
+                  <div className="text-xs text-muted-foreground">Add as new exercise</div>
+                </div>
+              </button>
+            )}
+
             {searchResults.map((exercise) => {
               const isExcluded = excludeIds.includes(exercise.id)
               const matchesFocus = exercise.muscleGroups.some((m) =>
@@ -331,14 +364,32 @@ function TemplateExercisePicker({
               )
             })}
 
-            {searchResults.length === 0 && query && (
-              <div className="text-center py-4 text-muted-foreground text-sm">
-                No exercises found for "{query}"
-              </div>
+            {/* Create new option - shown at bottom when not prominent */}
+            {!showCreateProminent && (
+              <button
+                type="button"
+                onClick={() => setShowCreateDrawer(true)}
+                className="w-full text-left p-3 rounded-xl transition-colors flex items-center gap-3 hover:bg-muted/50 active:bg-muted border-2 border-dashed border-border/50 mt-2"
+              >
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 bg-muted">
+                  <Plus className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm">Create New Exercise</div>
+                  <div className="text-xs text-muted-foreground">Add custom exercise</div>
+                </div>
+              </button>
             )}
           </div>
-        </ScrollArea>
+        </div>
       </DrawerContent>
+
+      {/* Create Exercise Drawer */}
+      <ExerciseFormDrawer
+        open={showCreateDrawer}
+        onOpenChange={setShowCreateDrawer}
+        onSave={handleCreateExercise}
+      />
     </Drawer>
   )
 }
