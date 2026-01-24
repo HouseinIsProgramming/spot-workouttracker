@@ -1,10 +1,16 @@
 import { useState, useRef } from 'react'
-import { X, ChevronDown } from 'lucide-react'
+import { X, ChevronDown, History, Trophy } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { useExercise, useLastExerciseSets, useActiveWorkout } from '@/lib/data/hooks'
+import { useExercise, useLastExerciseSets, useActiveWorkout, useExercisePRs, useExerciseHistory } from '@/lib/data/hooks'
 import { SetInput } from './SetInput'
 import { SetRow } from './SetRow'
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer'
 import type { WorkoutExercise } from '@/lib/data/types'
 
 type ExerciseCardProps = {
@@ -15,9 +21,12 @@ type ExerciseCardProps = {
 export function ExerciseCard({ workoutExercise, index }: ExerciseCardProps) {
   const exercise = useExercise(workoutExercise.exerciseId)
   const lastSets = useLastExerciseSets(workoutExercise.exerciseId)
+  const prs = useExercisePRs(workoutExercise.exerciseId)
+  const history = useExerciseHistory(workoutExercise.exerciseId)
   const { removeExercise, restoreExercise, removeSet, addSet, updateSet, toggleSetCompletion } = useActiveWorkout()
   const [expanded, setExpanded] = useState(true)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   if (!exercise) return null
@@ -117,6 +126,15 @@ export function ExerciseCard({ workoutExercise, index }: ExerciseCardProps) {
           />
         </button>
 
+        {/* History button */}
+        <button
+          type="button"
+          onClick={() => setShowHistory(true)}
+          className="w-8 h-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-all flex-shrink-0"
+        >
+          <History className="h-4 w-4" />
+        </button>
+
         {/* Delete button */}
         <button
           type="button"
@@ -170,6 +188,82 @@ export function ExerciseCard({ workoutExercise, index }: ExerciseCardProps) {
           />
         </div>
       )}
+
+      {/* History Drawer */}
+      <Drawer open={showHistory} onOpenChange={setShowHistory}>
+        <DrawerContent className="max-h-[85dvh]">
+          <DrawerHeader className="pb-2">
+            <DrawerTitle className="text-base">{exercise.name} History</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-6 space-y-4 overflow-y-auto">
+            {/* PRs Section */}
+            {prs.maxWeight > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Personal Records
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-yellow-500/10 rounded-xl p-3 border border-yellow-500/20">
+                    <div className="flex items-center gap-1.5 text-yellow-600 dark:text-yellow-400">
+                      <Trophy className="h-4 w-4" />
+                      <span className="text-xs font-medium">Max Weight</span>
+                    </div>
+                    <p className="text-lg font-bold mt-1">{prs.maxWeight}kg</p>
+                  </div>
+                  <div className="bg-yellow-500/10 rounded-xl p-3 border border-yellow-500/20">
+                    <div className="flex items-center gap-1.5 text-yellow-600 dark:text-yellow-400">
+                      <Trophy className="h-4 w-4" />
+                      <span className="text-xs font-medium">Max Volume</span>
+                    </div>
+                    <p className="text-lg font-bold mt-1">{prs.maxVolume}kg</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Recent History */}
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Recent Workouts
+              </p>
+              {history.length > 0 ? (
+                <div className="space-y-3">
+                  {history.slice(0, 5).map((entry) => (
+                    <div key={entry.workout.id} className="bg-muted/30 rounded-xl p-3 space-y-2">
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(entry.workout.completedAt ?? entry.workout.startedAt).toLocaleDateString(undefined, {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {entry.workoutExercise.sets.map((set, i) => (
+                          <span
+                            key={i}
+                            className={cn(
+                              'px-2 py-1 rounded-lg text-sm tabular-nums',
+                              set.type === 'warmup'
+                                ? 'bg-muted text-muted-foreground'
+                                : 'bg-card border border-border/50'
+                            )}
+                          >
+                            {set.weight}kg × {set.reps}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground py-4 text-center">
+                  No previous history for this exercise
+                </p>
+              )}
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   )
 }
