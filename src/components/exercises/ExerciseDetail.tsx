@@ -4,14 +4,11 @@ import { ArrowLeft, Pencil, Archive, RotateCcw, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { useExercise, useExerciseHistory } from '@/lib/data/hooks'
+import { useExercise, useExerciseHistory, useExerciseMutations } from '@/lib/data/hooks'
 import {
   isCustomExercise,
   isBuiltInExercise,
   isArchivedExercise,
-  archiveExercise,
-  restoreExercise,
-  permanentlyDeleteExercise,
 } from '@/lib/data/exercises'
 import { ExerciseFormDrawer } from './ExerciseFormDrawer'
 import { toast } from 'sonner'
@@ -21,6 +18,7 @@ export function ExerciseDetail() {
   const navigate = useNavigate()
   const exercise = useExercise(id)
   const history = useExerciseHistory(id)
+  const { archiveExercise, restoreExercise, deleteCustomExercise } = useExerciseMutations()
   const [showEditDrawer, setShowEditDrawer] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
@@ -28,22 +26,37 @@ export function ExerciseDetail() {
   const isBuiltIn = exercise ? isBuiltInExercise(exercise.id) : false
   const isArchived = exercise ? isArchivedExercise(exercise.id) : false
 
-  const handleArchive = () => {
-    archiveExercise(id)
-    toast.success('Exercise archived')
-    navigate({ to: '/exercises' })
-  }
-
-  const handleRestore = () => {
-    restoreExercise(id)
-    toast.success('Exercise restored')
-  }
-
-  const handlePermanentDelete = () => {
-    if (confirmDelete) {
-      permanentlyDeleteExercise(id)
-      toast.success('Exercise deleted permanently')
+  const handleArchive = async () => {
+    try {
+      await archiveExercise(id, isBuiltIn)
+      toast.success('Exercise archived')
       navigate({ to: '/exercises' })
+    } catch (error) {
+      console.error('Failed to archive exercise:', error)
+      toast.error('Failed to archive exercise')
+    }
+  }
+
+  const handleRestore = async () => {
+    try {
+      await restoreExercise(id, isBuiltIn)
+      toast.success('Exercise restored')
+    } catch (error) {
+      console.error('Failed to restore exercise:', error)
+      toast.error('Failed to restore exercise')
+    }
+  }
+
+  const handlePermanentDelete = async () => {
+    if (confirmDelete) {
+      try {
+        await deleteCustomExercise(id)
+        toast.success('Exercise deleted permanently')
+        navigate({ to: '/exercises' })
+      } catch (error) {
+        console.error('Failed to delete exercise:', error)
+        toast.error('Failed to delete exercise')
+      }
     } else {
       setConfirmDelete(true)
       setTimeout(() => setConfirmDelete(false), 2000)
