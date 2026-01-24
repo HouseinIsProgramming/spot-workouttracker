@@ -21,6 +21,7 @@ type ExerciseFormDrawerProps = {
   onOpenChange: (open: boolean) => void
   exercise?: Exercise // If provided, we're editing
   onSave?: (exercise: Exercise) => void
+  defaultName?: string // Pre-fill name for new exercises
 }
 
 const equipmentOptions: { value: Equipment | undefined; label: string }[] = [
@@ -38,6 +39,7 @@ export function ExerciseFormDrawer({
   onOpenChange,
   exercise,
   onSave,
+  defaultName,
 }: ExerciseFormDrawerProps) {
   const [name, setName] = useState('')
   const [muscleGroups, setMuscleGroups] = useState<MuscleGroup[]>([])
@@ -54,7 +56,7 @@ export function ExerciseFormDrawer({
         setMuscleGroups(exercise.muscleGroups)
         setEquipment(exercise.equipment)
       } else {
-        setName('')
+        setName(defaultName ?? '')
         setMuscleGroups([])
         setEquipment(undefined)
       }

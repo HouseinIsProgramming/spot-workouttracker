@@ -389,6 +389,7 @@ function TemplateExercisePicker({
         open={showCreateDrawer}
         onOpenChange={setShowCreateDrawer}
         onSave={handleCreateExercise}
+        defaultName={query}
       />
     </Drawer>
   )
