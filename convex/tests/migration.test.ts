@@ -264,7 +264,8 @@ describe("Workout Queries", () => {
     });
 
     expect(prs.maxWeight).toBe(110);
-    expect(prs.maxVolume).toBe(1200); // 100 × 12 = 1200
+    expect(prs.maxWeightReps).toBe(8); // reps at max weight
+    expect(prs.hypertrophy.weight).toBe(110); // best weight in 6-12 rep range
     expect(prs.maxRepsAtWeight[100]).toBe(12);
     expect(prs.maxRepsAtWeight[110]).toBe(8);
   });
