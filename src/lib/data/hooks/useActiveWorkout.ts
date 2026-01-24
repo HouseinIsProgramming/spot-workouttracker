@@ -1,209 +1,156 @@
-import { useCallback, useSyncExternalStore } from 'react'
-import type { MuscleGroup, Workout, WorkoutExercise, Set, SetType, PRType } from '../types'
-import { addCompletedWorkout } from './useWorkouts'
+import { useCallback, useMemo } from "react";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../../../convex/_generated/api";
+import type {
+  MuscleGroup,
+  Workout,
+  WorkoutExercise,
+  SetType,
+  PRType,
+} from "../types";
 
-const STORAGE_KEY = 'workout-tracker-active-workout'
-
-function generateId(): string {
-  return Math.random().toString(36).substring(2, 9)
-}
-
-// Shared state - single source of truth
-let activeWorkout: Workout | null = null
-let listeners = new Set<() => void>()
-
-function loadFromStorage(): Workout | null {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    return stored ? JSON.parse(stored) : null
-  } catch {
-    return null
-  }
-}
-
-function saveToStorage(workout: Workout | null) {
-  if (workout) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(workout))
-  } else {
-    localStorage.removeItem(STORAGE_KEY)
-  }
-}
-
-// Initialize from localStorage
-activeWorkout = loadFromStorage()
-
-function subscribe(listener: () => void) {
-  listeners.add(listener)
-  return () => listeners.delete(listener)
-}
-
-function getSnapshot() {
-  return activeWorkout
-}
-
-function emitChange() {
-  listeners.forEach((listener) => listener())
-}
-
-function setActiveWorkout(workout: Workout | null) {
-  activeWorkout = workout
-  saveToStorage(workout)
-  emitChange()
-}
-
-function updateActiveWorkout(updater: (prev: Workout | null) => Workout | null) {
-  const newWorkout = updater(activeWorkout)
-  if (newWorkout !== activeWorkout) {
-    setActiveWorkout(newWorkout)
-  }
-}
-
-// TODO: Replace with Convex mutations and live queries
 export function useActiveWorkout() {
-  const workout = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
+  const activeWorkoutData = useQuery(api.activeWorkouts.get);
+  const startMutation = useMutation(api.activeWorkouts.start);
+  const addExerciseMutation = useMutation(api.activeWorkouts.addExercise);
+  const removeExerciseMutation = useMutation(api.activeWorkouts.removeExercise);
+  const restoreExerciseMutation = useMutation(
+    api.activeWorkouts.restoreExercise
+  );
+  const addSetMutation = useMutation(api.activeWorkouts.addSet);
+  const updateSetMutation = useMutation(api.activeWorkouts.updateSet);
+  const removeSetMutation = useMutation(api.activeWorkouts.removeSet);
+  const setNotesMutation = useMutation(api.activeWorkouts.setNotes);
+  const completeMutation = useMutation(api.activeWorkouts.complete);
+  const discardMutation = useMutation(api.activeWorkouts.discard);
 
-  const startWorkout = useCallback((focus: MuscleGroup[]) => {
-    const newWorkout: Workout = {
-      id: generateId(),
-      focus,
-      startedAt: Date.now(),
-      exercises: [],
-    }
-    setActiveWorkout(newWorkout)
-    return newWorkout
-  }, [])
+  // Transform Convex document to Workout type (using _id as id)
+  const workout: Workout | null = useMemo(() => {
+    if (!activeWorkoutData) return null;
+    return {
+      id: activeWorkoutData._id,
+      focus: activeWorkoutData.focus as MuscleGroup[],
+      startedAt: activeWorkoutData.startedAt,
+      notes: activeWorkoutData.notes,
+      exercises: activeWorkoutData.exercises as WorkoutExercise[],
+    };
+  }, [activeWorkoutData]);
 
-  const addExercise = useCallback((exerciseId: string) => {
-    updateActiveWorkout((prev) => {
-      if (!prev) return prev
-      const newExercise: WorkoutExercise = {
-        id: generateId(),
-        exerciseId,
-        sets: [],
-      }
+  const startWorkout = useCallback(
+    async (focus: MuscleGroup[]) => {
+      const result = await startMutation({ focus });
+      if (!result) throw new Error("Failed to start workout");
       return {
-        ...prev,
-        exercises: [...prev.exercises, newExercise],
-      }
-    })
-  }, [])
+        id: result._id,
+        focus: result.focus as MuscleGroup[],
+        startedAt: result.startedAt,
+        exercises: result.exercises as WorkoutExercise[],
+      } as Workout;
+    },
+    [startMutation]
+  );
 
-  const removeExercise = useCallback((workoutExerciseId: string) => {
-    updateActiveWorkout((prev) => {
-      if (!prev) return prev
-      return {
-        ...prev,
-        exercises: prev.exercises.filter((e) => e.id !== workoutExerciseId),
-      }
-    })
-  }, [])
+  const addExercise = useCallback(
+    async (exerciseId: string) => {
+      await addExerciseMutation({ exerciseId });
+    },
+    [addExerciseMutation]
+  );
 
-  const restoreExercise = useCallback((exercise: WorkoutExercise, atIndex?: number) => {
-    updateActiveWorkout((prev) => {
-      if (!prev) return prev
-      const exercises = [...prev.exercises]
-      if (atIndex !== undefined && atIndex >= 0 && atIndex <= exercises.length) {
-        exercises.splice(atIndex, 0, exercise)
-      } else {
-        exercises.push(exercise)
-      }
-      return { ...prev, exercises }
-    })
-  }, [])
+  const removeExercise = useCallback(
+    async (workoutExerciseId: string) => {
+      await removeExerciseMutation({ workoutExerciseId });
+    },
+    [removeExerciseMutation]
+  );
+
+  const restoreExercise = useCallback(
+    async (exercise: WorkoutExercise, atIndex?: number) => {
+      await restoreExerciseMutation({
+        exercise: {
+          id: exercise.id,
+          exerciseId: exercise.exerciseId,
+          sets: exercise.sets.map((s) => ({
+            id: s.id,
+            weight: s.weight,
+            reps: s.reps,
+            rpe: s.rpe,
+            type: s.type,
+            completedAt: s.completedAt,
+            checkedAt: s.checkedAt,
+            prs: s.prs,
+          })),
+        },
+        atIndex,
+      });
+    },
+    [restoreExerciseMutation]
+  );
 
   const addSet = useCallback(
-    (
+    async (
       workoutExerciseId: string,
       weight: number,
       reps: number,
-      type: SetType = 'normal',
+      type: SetType = "normal",
       rpe?: number,
       prs?: PRType[]
     ) => {
-      updateActiveWorkout((prev) => {
-        if (!prev) return prev
-        return {
-          ...prev,
-          exercises: prev.exercises.map((we) => {
-            if (we.id !== workoutExerciseId) return we
-            const newSet: Set = {
-              id: generateId(),
-              weight,
-              reps,
-              type,
-              rpe,
-              completedAt: Date.now(),
-              prs: prs && prs.length > 0 ? prs : undefined,
-            }
-            return {
-              ...we,
-              sets: [...we.sets, newSet],
-            }
-          }),
-        }
-      })
+      await addSetMutation({
+        workoutExerciseId,
+        weight,
+        reps,
+        type,
+        rpe,
+        prs,
+      });
     },
-    []
-  )
+    [addSetMutation]
+  );
 
   const updateSet = useCallback(
-    (
+    async (
       workoutExerciseId: string,
       setId: string,
-      updates: Partial<Omit<Set, 'id' | 'completedAt'>>
+      updates: Partial<{
+        weight: number;
+        reps: number;
+        type: SetType;
+        rpe: number;
+        prs: PRType[];
+        checkedAt: number;
+      }>
     ) => {
-      updateActiveWorkout((prev) => {
-        if (!prev) return prev
-        return {
-          ...prev,
-          exercises: prev.exercises.map((we) => {
-            if (we.id !== workoutExerciseId) return we
-            return {
-              ...we,
-              sets: we.sets.map((s) =>
-                s.id === setId ? { ...s, ...updates } : s
-              ),
-            }
-          }),
-        }
-      })
+      await updateSetMutation({
+        workoutExerciseId,
+        setId,
+        ...updates,
+      });
     },
-    []
-  )
+    [updateSetMutation]
+  );
 
-  const removeSet = useCallback((workoutExerciseId: string, setId: string) => {
-    updateActiveWorkout((prev) => {
-      if (!prev) return prev
-      return {
-        ...prev,
-        exercises: prev.exercises.map((we) => {
-          if (we.id !== workoutExerciseId) return we
-          return {
-            ...we,
-            sets: we.sets.filter((s) => s.id !== setId),
-          }
-        }),
-      }
-    })
-  }, [])
+  const removeSet = useCallback(
+    async (workoutExerciseId: string, setId: string) => {
+      await removeSetMutation({ workoutExerciseId, setId });
+    },
+    [removeSetMutation]
+  );
 
-  const setNotes = useCallback((notes: string) => {
-    updateActiveWorkout((prev) => {
-      if (!prev) return prev
-      return { ...prev, notes }
-    })
-  }, [])
+  const setNotes = useCallback(
+    async (notes: string) => {
+      await setNotesMutation({ notes });
+    },
+    [setNotesMutation]
+  );
 
-  const completeWorkout = useCallback(() => {
-    if (!activeWorkout) return
-    const completed = { ...activeWorkout, completedAt: Date.now() }
-    addCompletedWorkout(completed)
-    setActiveWorkout(null)
-  }, [])
+  const completeWorkout = useCallback(async () => {
+    await completeMutation();
+  }, [completeMutation]);
 
-  const discardWorkout = useCallback(() => {
-    setActiveWorkout(null)
-  }, [])
+  const discardWorkout = useCallback(async () => {
+    await discardMutation();
+  }, [discardMutation]);
 
   return {
     workout,
@@ -218,5 +165,5 @@ export function useActiveWorkout() {
     setNotes,
     completeWorkout,
     discardWorkout,
-  }
+  };
 }

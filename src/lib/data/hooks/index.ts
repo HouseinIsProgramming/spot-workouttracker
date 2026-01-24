@@ -1,4 +1,12 @@
-export { useExercises, useExercise, useExerciseSearch, useExercisesByMuscle } from './useExercises'
+export {
+  useExercises,
+  useExercise,
+  useExerciseSearch,
+  useExercisesByMuscle,
+  useCustomExercises,
+  useArchivedExercises,
+  useExerciseMutations,
+} from './useExercises'
 export {
   useWorkouts,
   useWorkout,
@@ -15,5 +23,8 @@ export {
   permanentlyDeleteWorkout,
   checkForPRs,
   getExercisePRs,
+  useExercisePRs,
+  updatePRCache,
+  useWorkoutMutations,
 } from './useWorkouts'
 export { useActiveWorkout } from './useActiveWorkout'
