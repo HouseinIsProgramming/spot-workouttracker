@@ -262,26 +262,6 @@ export function StartWorkoutDrawer({ open, onOpenChange }: StartWorkoutDrawerPro
             </div>
           )}
 
-          {/* Quick presets (shown when no search and no selection) */}
-          {!search && selectedFocus.length === 0 && (
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Quick start
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                {Object.entries(allPresets).slice(0, 6).map(([name, muscles]) => (
-                  <button
-                    key={name}
-                    onClick={() => addMuscles(muscles)}
-                    className="px-3 py-2.5 rounded-xl bg-muted/50 text-sm capitalize hover:bg-muted transition-colors text-center"
-                  >
-                    {name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Start button */}
           <Button
             size="lg"
