@@ -168,7 +168,11 @@ export const getExercisePRs = query({
     if (!userId) {
       return {
         maxWeight: 0,
-        maxVolume: 0,
+        maxWeightReps: 0,
+        // Rep range PRs: best weight achieved in each rep range
+        strength: { weight: 0, reps: 0 },    // 1-5 reps
+        hypertrophy: { weight: 0, reps: 0 }, // 6-12 reps
+        endurance: { weight: 0, reps: 0 },   // 12+ reps
         maxRepsAtWeight: {} as Record<number, number>,
       };
     }
@@ -180,7 +184,10 @@ export const getExercisePRs = query({
 
     const prs = {
       maxWeight: 0,
-      maxVolume: 0,
+      maxWeightReps: 0,
+      strength: { weight: 0, reps: 0 },
+      hypertrophy: { weight: 0, reps: 0 },
+      endurance: { weight: 0, reps: 0 },
       maxRepsAtWeight: {} as Record<number, number>,
     };
 
@@ -195,15 +202,28 @@ export const getExercisePRs = query({
       for (const set of workoutExercise.sets) {
         if (set.type === "warmup") continue;
 
-        // Track max weight
+        // Track max weight (with reps)
         if (set.weight > prs.maxWeight) {
           prs.maxWeight = set.weight;
+          prs.maxWeightReps = set.reps;
         }
 
-        // Track max volume (weight × reps)
-        const volume = set.weight * set.reps;
-        if (volume > prs.maxVolume) {
-          prs.maxVolume = volume;
+        // Track rep range PRs (best weight in each range)
+        if (set.reps >= 1 && set.reps <= 5) {
+          // Strength range
+          if (set.weight > prs.strength.weight) {
+            prs.strength = { weight: set.weight, reps: set.reps };
+          }
+        } else if (set.reps >= 6 && set.reps <= 12) {
+          // Hypertrophy range
+          if (set.weight > prs.hypertrophy.weight) {
+            prs.hypertrophy = { weight: set.weight, reps: set.reps };
+          }
+        } else if (set.reps > 12) {
+          // Endurance range
+          if (set.weight > prs.endurance.weight) {
+            prs.endurance = { weight: set.weight, reps: set.reps };
+          }
         }
 
         // Track max reps at each weight

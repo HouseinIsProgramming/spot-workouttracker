@@ -202,21 +202,37 @@ export function ExerciseCard({ workoutExercise, index }: ExerciseCardProps) {
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Personal Records
                 </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-yellow-500/10 rounded-xl p-3 border border-yellow-500/20">
-                    <div className="flex items-center gap-1.5 text-yellow-600 dark:text-yellow-400">
-                      <Trophy className="h-4 w-4" />
-                      <span className="text-xs font-medium">Max Weight</span>
-                    </div>
-                    <p className="text-lg font-bold mt-1">{prs.maxWeight}kg</p>
+                <div className="space-y-1.5">
+                  {/* Max Weight */}
+                  <div className="flex items-center gap-2 bg-yellow-500/10 rounded-lg px-3 py-2 border border-yellow-500/20">
+                    <Trophy className="h-4 w-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+                    <span className="text-xs text-yellow-600 dark:text-yellow-400 font-medium w-20">Max</span>
+                    <span className="font-bold tabular-nums">{prs.maxWeight}kg × {prs.maxWeightReps}</span>
                   </div>
-                  <div className="bg-yellow-500/10 rounded-xl p-3 border border-yellow-500/20">
-                    <div className="flex items-center gap-1.5 text-yellow-600 dark:text-yellow-400">
-                      <Trophy className="h-4 w-4" />
-                      <span className="text-xs font-medium">Max Volume</span>
+                  {/* Strength (1-5 reps) */}
+                  {prs.strength.weight > 0 && (
+                    <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2">
+                      <Trophy className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-xs text-muted-foreground font-medium w-20">1-5 reps</span>
+                      <span className="font-semibold tabular-nums">{prs.strength.weight}kg × {prs.strength.reps}</span>
                     </div>
-                    <p className="text-lg font-bold mt-1">{prs.maxVolume}kg</p>
-                  </div>
+                  )}
+                  {/* Hypertrophy (6-12 reps) */}
+                  {prs.hypertrophy.weight > 0 && (
+                    <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2">
+                      <Trophy className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-xs text-muted-foreground font-medium w-20">6-12 reps</span>
+                      <span className="font-semibold tabular-nums">{prs.hypertrophy.weight}kg × {prs.hypertrophy.reps}</span>
+                    </div>
+                  )}
+                  {/* Endurance (12+ reps) */}
+                  {prs.endurance.weight > 0 && (
+                    <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2">
+                      <Trophy className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-xs text-muted-foreground font-medium w-20">12+ reps</span>
+                      <span className="font-semibold tabular-nums">{prs.endurance.weight}kg × {prs.endurance.reps}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

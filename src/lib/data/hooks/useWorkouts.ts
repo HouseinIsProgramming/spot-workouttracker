@@ -261,10 +261,27 @@ export function useMuscleStatus(): Record<
 }
 
 // PR Detection
+export type RepRangePR = {
+  weight: number;
+  reps: number;
+};
+
 export type ExercisePRs = {
   maxWeight: number;
-  maxVolume: number; // weight × reps
+  maxWeightReps: number;
+  strength: RepRangePR;    // 1-5 reps
+  hypertrophy: RepRangePR; // 6-12 reps
+  endurance: RepRangePR;   // 12+ reps
   maxRepsAtWeight: Record<number, number>; // weight -> max reps
+};
+
+const emptyPRs: ExercisePRs = {
+  maxWeight: 0,
+  maxWeightReps: 0,
+  strength: { weight: 0, reps: 0 },
+  hypertrophy: { weight: 0, reps: 0 },
+  endurance: { weight: 0, reps: 0 },
+  maxRepsAtWeight: {},
 };
 
 // Hook to get PRs for an exercise
@@ -273,13 +290,9 @@ export function useExercisePRs(exerciseId: string): ExercisePRs {
 
   return useMemo(() => {
     if (!prs) {
-      return {
-        maxWeight: 0,
-        maxVolume: 0,
-        maxRepsAtWeight: {},
-      };
+      return emptyPRs;
     }
-    return prs;
+    return prs as ExercisePRs;
   }, [prs]);
 }
 
@@ -290,13 +303,7 @@ let prCache: Record<string, ExercisePRs> = {};
 export function getExercisePRs(exerciseId: string): ExercisePRs {
   // Return cached value if available, otherwise return empty PRs
   // The actual values will be populated by useExercisePRs hook
-  return (
-    prCache[exerciseId] ?? {
-      maxWeight: 0,
-      maxVolume: 0,
-      maxRepsAtWeight: {},
-    }
-  );
+  return prCache[exerciseId] ?? emptyPRs;
 }
 
 // Update PR cache (called from components using useExercisePRs)
@@ -321,9 +328,12 @@ export function checkForPRs(
     achievedPRs.push("weight");
   }
 
-  // Volume PR: weight × reps higher than ever
-  const volume = weight * reps;
-  if (volume > currentPRs.maxVolume && currentPRs.maxVolume > 0) {
+  // Rep range PR: heavier than ever in this rep range
+  if (reps >= 1 && reps <= 5 && weight > currentPRs.strength.weight && currentPRs.strength.weight > 0) {
+    achievedPRs.push("volume"); // Reusing "volume" for rep range PRs
+  } else if (reps >= 6 && reps <= 12 && weight > currentPRs.hypertrophy.weight && currentPRs.hypertrophy.weight > 0) {
+    achievedPRs.push("volume");
+  } else if (reps > 12 && weight > currentPRs.endurance.weight && currentPRs.endurance.weight > 0) {
     achievedPRs.push("volume");
   }
 
