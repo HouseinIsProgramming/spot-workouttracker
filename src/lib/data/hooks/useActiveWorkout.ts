@@ -8,6 +8,7 @@ import type {
   SetType,
   PRType,
 } from "../types";
+import type { Id } from "../../../../convex/_generated/dataModel";
 
 export function useActiveWorkout() {
   const activeWorkoutData = useQuery(api.activeWorkouts.get);
@@ -23,6 +24,9 @@ export function useActiveWorkout() {
   const setNotesMutation = useMutation(api.activeWorkouts.setNotes);
   const completeMutation = useMutation(api.activeWorkouts.complete);
   const discardMutation = useMutation(api.activeWorkouts.discard);
+  const toggleSetCompletionMutation = useMutation(
+    api.activeWorkouts.toggleSetCompletion
+  );
 
   // Transform Convex document to Workout type (using _id as id)
   const workout: Workout | null = useMemo(() => {
@@ -37,8 +41,8 @@ export function useActiveWorkout() {
   }, [activeWorkoutData]);
 
   const startWorkout = useCallback(
-    async (focus: MuscleGroup[]) => {
-      const result = await startMutation({ focus });
+    async (focus: MuscleGroup[], templateId?: Id<"workoutTemplates">) => {
+      const result = await startMutation({ focus, templateId });
       if (!result) throw new Error("Failed to start workout");
       return {
         id: result._id,
@@ -94,7 +98,8 @@ export function useActiveWorkout() {
       reps: number,
       type: SetType = "normal",
       rpe?: number,
-      prs?: PRType[]
+      prs?: PRType[],
+      autoComplete: boolean = true
     ) => {
       await addSetMutation({
         workoutExerciseId,
@@ -103,9 +108,17 @@ export function useActiveWorkout() {
         type,
         rpe,
         prs,
+        autoComplete,
       });
     },
     [addSetMutation]
+  );
+
+  const toggleSetCompletion = useCallback(
+    async (workoutExerciseId: string, setId: string) => {
+      await toggleSetCompletionMutation({ workoutExerciseId, setId });
+    },
+    [toggleSetCompletionMutation]
   );
 
   const updateSet = useCallback(
@@ -162,6 +175,7 @@ export function useActiveWorkout() {
     addSet,
     updateSet,
     removeSet,
+    toggleSetCompletion,
     setNotes,
     completeWorkout,
     discardWorkout,

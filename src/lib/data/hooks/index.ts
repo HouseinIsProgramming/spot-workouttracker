@@ -28,3 +28,4 @@ export {
   useWorkoutMutations,
 } from './useWorkouts'
 export { useActiveWorkout } from './useActiveWorkout'
+export { useTemplates, type WorkoutTemplate } from './useTemplates'
