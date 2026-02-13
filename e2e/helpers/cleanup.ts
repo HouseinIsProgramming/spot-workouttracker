@@ -1,31 +1,68 @@
 import { type Page } from '@playwright/test'
 
-/**
- * Clear all test user data via the Convex devTools.clearAllData mutation.
- * This runs client-side by calling the mutation through the app's Convex client.
- */
-export async function clearTestUserData(page: Page) {
-  await page.goto('/')
-  // Wait for app to be ready (Convex connected + authenticated)
-  await page.waitForTimeout(2000)
+const CONVEX_URL = 'https://brave-dogfish-97.convex.cloud'
 
-  await page.evaluate(async () => {
-    // Access the Convex client from the window (we expose it in test mode)
-    // Fallback: call the API directly through the app
-    const response = await fetch(
-      `${(window as any).__CONVEX_URL || ''}/api/mutation`,
-      {
+/**
+ * Clear the active workout via Convex HTTP API.
+ * Uses the auth token already stored in localStorage by the auth setup.
+ */
+export async function clearActiveWorkout(page: Page) {
+  // Navigate to app so localStorage is available from the correct origin
+  await page.goto('/')
+  await page.waitForLoadState('domcontentloaded')
+
+  const result = await page.evaluate(async (url) => {
+    // Find the Convex auth token in localStorage
+    // convex-dev/auth stores it under a key like `__convexAuthJWT_...`
+    let token: string | null = null
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key && (key.includes('convexAuth') || key.includes('ConvexAuth') || key.includes('__convexAuth'))) {
+        const val = localStorage.getItem(key)
+        if (val && val.startsWith('ey')) {
+          token = val
+          break
+        }
+      }
+    }
+
+    // Fallback: scan all keys for JWT-looking values
+    if (!token) {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key) {
+          const val = localStorage.getItem(key)
+          if (val && val.startsWith('eyJ') && val.length > 100) {
+            token = val
+            break
+          }
+        }
+      }
+    }
+
+    if (!token) return { ok: false, error: 'no-token' }
+
+    try {
+      const res = await fetch(`${url}/api/mutation`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({
           path: 'devTools:clearAllData',
           args: {},
+          format: 'json',
         }),
-      }
-    )
-    return response.ok
-  }).catch(() => {
-    // If direct API call fails, we'll use the UI-based approach
-    // The clearAllData mutation will be called through a test helper in the app
-  })
+      })
+      return { ok: res.ok, status: res.status }
+    } catch (e) {
+      return { ok: false, error: String(e) }
+    }
+  }, CONVEX_URL)
+
+  if (!result.ok) {
+    // Fallback: if API cleanup fails, we'll let the test handle it
+    console.warn('API cleanup failed:', result)
+  }
 }
