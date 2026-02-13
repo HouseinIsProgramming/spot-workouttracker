@@ -181,6 +181,15 @@ export const clearAllData = mutation({
       await ctx.db.delete(p._id);
     }
 
+    // Delete all templates
+    const templates = await ctx.db
+      .query("workoutTemplates")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    for (const t of templates) {
+      await ctx.db.delete(t._id);
+    }
+
     // Delete user settings
     const settings = await ctx.db
       .query("userSettings")
@@ -195,6 +204,7 @@ export const clearAllData = mutation({
         workouts: workouts.length,
         exercises: exercises.length,
         presets: presets.length,
+        templates: templates.length,
       },
     };
   },
