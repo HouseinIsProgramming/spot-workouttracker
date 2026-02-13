@@ -57,9 +57,9 @@ export function WorkoutPage() {
       ? workout.focus.map((m) => m.charAt(0).toUpperCase() + m.slice(1)).join(' + ')
       : 'Freestyle'
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     if (confirmComplete) {
-      completeWorkout()
+      await completeWorkout()
       toast.success('Workout completed!')
       navigate({ to: '/history' })
     } else {
@@ -69,9 +69,9 @@ export function WorkoutPage() {
     }
   }
 
-  const handleDiscard = () => {
+  const handleDiscard = async () => {
     if (confirmDiscard) {
-      discardWorkout()
+      await discardWorkout()
       toast('Workout discarded')
       navigate({ to: '/' })
     } else {
@@ -111,7 +111,10 @@ export function WorkoutPage() {
               Complete Workout
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={handleDiscard}
+              onSelect={(e) => {
+                e.preventDefault()
+                handleDiscard()
+              }}
               className={cn(
                 confirmDiscard
                   ? 'bg-destructive text-destructive-foreground'
