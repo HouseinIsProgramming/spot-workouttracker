@@ -6,7 +6,7 @@ import { Dumbbell, ChevronRight, X, Plus, RotateCcw, LogOut, ChevronDown, Wrench
 import { cn } from '@/lib/utils'
 import { FOCUS_PRESETS, ALL_MUSCLE_GROUPS, type MuscleGroup } from '@/lib/data/types'
 import { useAuth } from '@/lib/auth'
-import { usePresets, isBuiltInPreset } from '@/lib/data/hooks'
+import { usePresets } from '@/lib/data/hooks'
 import { toast } from 'sonner'
 
 // Re-export for StartWorkoutDrawer compatibility
