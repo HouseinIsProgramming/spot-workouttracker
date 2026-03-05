@@ -99,12 +99,12 @@ export function StartWorkoutDrawer({ open, onOpenChange }: StartWorkoutDrawerPro
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[85dvh]">
-        <DrawerHeader className="pb-2">
+      <DrawerContent className="max-h-[85dvh] flex flex-col">
+        <DrawerHeader className="pb-2 flex-shrink-0">
           <DrawerTitle className="text-base">Start Workout</DrawerTitle>
         </DrawerHeader>
 
-        <div className="p-4 space-y-4 overflow-y-auto">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-4">
           {/* Search input */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -260,7 +260,10 @@ export function StartWorkoutDrawer({ open, onOpenChange }: StartWorkoutDrawerPro
             </div>
           )}
 
-          {/* Start button */}
+        </div>
+
+        {/* Start button — pinned below scroll area */}
+        <div className="flex-shrink-0 p-4 pt-2 safe-area-pb">
           <Button
             size="lg"
             className={cn(

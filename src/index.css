@@ -176,6 +176,12 @@ textarea,
   padding-bottom: calc(10rem + env(safe-area-inset-bottom, 0px));
 }
 
+/* Momentum scrolling for drawer content on iOS */
+[data-slot="drawer-content"] [style*="overflow"],
+[data-slot="drawer-content"] .overflow-y-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
 /* Dark mode by default - applied via JS */
 html {
   color-scheme: dark;

@@ -116,8 +116,8 @@ export function ExerciseFormDrawer({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[85dvh]">
-        <DrawerHeader className="pb-2">
+      <DrawerContent className="max-h-[85dvh] flex flex-col">
+        <DrawerHeader className="pb-2 flex-shrink-0">
           <DrawerTitle className="text-base">
             {isEditing
               ? isEditingBuiltIn
@@ -132,7 +132,7 @@ export function ExerciseFormDrawer({
           )}
         </DrawerHeader>
 
-        <div className="p-4 space-y-5">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-5">
           {/* Name input */}
           <div className="space-y-2">
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -201,7 +201,10 @@ export function ExerciseFormDrawer({
             </div>
           </div>
 
-          {/* Save button */}
+        </div>
+
+        {/* Save button — pinned below scroll area */}
+        <div className="flex-shrink-0 p-4 pt-2 safe-area-pb">
           <Button
             size="lg"
             className="w-full h-12 rounded-xl"
