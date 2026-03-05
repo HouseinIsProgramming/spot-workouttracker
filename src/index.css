@@ -140,15 +140,46 @@
   }
   body {
     @apply font-sans bg-background text-foreground;
+    overscroll-behavior: none;
   }
   html {
     @apply font-sans;
+    overscroll-behavior: none;
   }
+}
+
+/* Prevent iOS Safari auto-zoom on input focus (requires font-size >= 16px) */
+input:not([data-no-zoom-fix]),
+select,
+textarea,
+[role="combobox"] {
+  font-size: 16px !important;
 }
 
 /* Safe area for iOS notch/home indicator */
 .safe-area-pb {
   padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Bottom position above nav + safe area (for fixed/sticky elements) */
+.bottom-nav-safe {
+  bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Padding bottom to clear nav + safe area + breathing room */
+.pb-nav-safe {
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Extra padding bottom for pages with sticky bottom buttons above nav */
+.pb-nav-safe-xl {
+  padding-bottom: calc(10rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Momentum scrolling for drawer content on iOS */
+[data-slot="drawer-content"] [style*="overflow"],
+[data-slot="drawer-content"] .overflow-y-auto {
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Dark mode by default - applied via JS */

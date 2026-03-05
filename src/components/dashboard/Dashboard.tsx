@@ -17,7 +17,7 @@ export function Dashboard() {
     : 0
 
   return (
-    <div className="p-4 pb-28 space-y-6">
+    <div className="p-4 pb-nav-safe-xl space-y-6">
       {/* Active workout banner */}
       {isActive && (
         <section className="pt-2">
@@ -78,8 +78,7 @@ export function Dashboard() {
       {/* Fixed bottom Start Workout button - above nav bar */}
       {!isActive && (
         <div
-          className="fixed left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent"
-          style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))' }}
+          className="fixed bottom-nav-safe left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent"
         >
           <Button
             size="lg"

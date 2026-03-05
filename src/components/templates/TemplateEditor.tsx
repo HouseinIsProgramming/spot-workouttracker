@@ -295,7 +295,7 @@ function TemplateExercisePicker({
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-4">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-4 safe-area-pb">
           <div className="space-y-1">
             {/* Prominent "Create" button when no good matches */}
             {showCreateProminent && (

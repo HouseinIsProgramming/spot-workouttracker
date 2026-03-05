@@ -102,6 +102,7 @@ export function SetInput({ workoutExerciseId, exerciseId, defaultWeight, default
             <input
               type="number"
               inputMode="decimal"
+              data-no-zoom-fix
               value={weightInput}
               onChange={(e) => setWeightInput(e.target.value)}
               placeholder={String(placeholderWeight)}
@@ -134,6 +135,7 @@ export function SetInput({ workoutExerciseId, exerciseId, defaultWeight, default
             <input
               type="number"
               inputMode="numeric"
+              data-no-zoom-fix
               value={repsInput}
               onChange={(e) => setRepsInput(e.target.value)}
               placeholder={String(placeholderReps)}

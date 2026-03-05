@@ -3,6 +3,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { BottomNav } from '@/components/navigation/BottomNav'
 import { SignIn } from '@/components/auth/SignIn'
 import { MigrationHandler } from '@/components/migration/MigrationHandler'
+import { ServiceWorkerUpdater } from '@/components/pwa/ServiceWorkerUpdater'
 import { useAuth } from '@/lib/auth'
 import { Dumbbell } from 'lucide-react'
 
@@ -27,6 +28,7 @@ export function RootLayout() {
       <>
         <SignIn />
         <Toaster position="top-center" />
+        <ServiceWorkerUpdater />
       </>
     )
   }
@@ -35,11 +37,12 @@ export function RootLayout() {
   return (
     <MigrationHandler>
       <div className="min-h-dvh bg-background flex flex-col">
-        <main className="flex-1 pb-20 overflow-y-auto">
+        <main className="flex-1 pb-nav-safe overflow-y-auto" style={{ touchAction: 'pan-y pinch-zoom' }}>
           <Outlet />
         </main>
         <BottomNav />
         <Toaster position="top-center" />
+        <ServiceWorkerUpdater />
       </div>
     </MigrationHandler>
   )

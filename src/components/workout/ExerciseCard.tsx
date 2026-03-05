@@ -191,11 +191,11 @@ export function ExerciseCard({ workoutExercise, index }: ExerciseCardProps) {
 
       {/* History Drawer */}
       <Drawer open={showHistory} onOpenChange={setShowHistory}>
-        <DrawerContent className="max-h-[85dvh]">
-          <DrawerHeader className="pb-2">
+        <DrawerContent className="max-h-[85dvh] flex flex-col">
+          <DrawerHeader className="pb-2 flex-shrink-0">
             <DrawerTitle className="text-base">{exercise.name} History</DrawerTitle>
           </DrawerHeader>
-          <div className="px-4 pb-6 space-y-4 overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-6 safe-area-pb space-y-4">
             {/* PRs Section */}
             {prs.maxWeight > 0 && (
               <div className="space-y-2">
