@@ -84,7 +84,7 @@ export function WorkoutPage() {
   const hasExercises = workout.exercises.length > 0
 
   return (
-    <div className={cn('p-4 space-y-4', hasExercises && 'pb-36')}>
+    <div className={cn('p-4 space-y-4', hasExercises && 'pb-nav-safe-xl')}>
       {/* Header - clean and minimal */}
       <header className="flex items-center justify-between">
         <div>
@@ -151,7 +151,7 @@ export function WorkoutPage() {
 
       {/* Complete button (sticky at bottom) */}
       {hasExercises && (
-        <div className="fixed bottom-16 left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent pt-8">
+        <div className="fixed bottom-nav-safe left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent pt-8">
           <Button
             size="lg"
             className={cn(

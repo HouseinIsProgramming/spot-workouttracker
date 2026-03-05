@@ -35,7 +35,7 @@ export function RootLayout() {
   return (
     <MigrationHandler>
       <div className="min-h-dvh bg-background flex flex-col">
-        <main className="flex-1 pb-20 overflow-y-auto">
+        <main className="flex-1 pb-nav-safe overflow-y-auto" style={{ touchAction: 'pan-y pinch-zoom' }}>
           <Outlet />
         </main>
         <BottomNav />
