@@ -78,7 +78,7 @@ export function Dashboard() {
       {/* Fixed bottom Start Workout button - above nav bar */}
       {!isActive && (
         <div
-          className="fixed bottom-nav-safe left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent"
+          className="fixed bottom-nav-safe left-0 right-0 p-4 bg-gradient-to-t from-background/90 via-background/60 to-transparent"
         >
           <Button
             size="lg"

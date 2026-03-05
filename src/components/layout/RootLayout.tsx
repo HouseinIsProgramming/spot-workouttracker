@@ -36,8 +36,10 @@ export function RootLayout() {
   // Authenticated - show app with migration handler
   return (
     <MigrationHandler>
-      <div className="min-h-dvh bg-background flex flex-col safe-area-pt">
-        <main className="flex-1 pb-nav-safe overflow-y-auto" style={{ touchAction: 'pan-y pinch-zoom' }}>
+      <div className="min-h-dvh bg-background flex flex-col">
+        {/* Frosted top bar for standalone PWA */}
+        <div className="fixed top-0 left-0 right-0 z-50 bg-background/60 backdrop-blur-xl" style={{ height: 'env(safe-area-inset-top, 0px)' }} />
+        <main className="flex-1 pb-nav-safe overflow-y-auto safe-area-pt" style={{ touchAction: 'pan-y pinch-zoom' }}>
           <Outlet />
         </main>
         <BottomNav />

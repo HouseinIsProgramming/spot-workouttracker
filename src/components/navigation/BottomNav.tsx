@@ -16,7 +16,7 @@ export function BottomNav() {
   const { isActive } = useActiveWorkout()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border safe-area-pb">
+    <nav className="fixed bottom-0 left-0 right-0 bg-background/60 backdrop-blur-xl safe-area-pb z-50">
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
         {navItems.map(({ to, icon: Icon, label }) => {
           const isCurrentPath = location.pathname === to ||

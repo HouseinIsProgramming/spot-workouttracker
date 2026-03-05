@@ -151,7 +151,7 @@ export function WorkoutPage() {
 
       {/* Complete button (sticky at bottom) */}
       {hasExercises && (
-        <div className="fixed bottom-nav-safe left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent pt-8">
+        <div className="fixed bottom-nav-safe left-0 right-0 p-4 bg-gradient-to-t from-background/90 via-background/60 to-transparent pt-8">
           <Button
             size="lg"
             className={cn(
