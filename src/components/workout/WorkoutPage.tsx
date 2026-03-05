@@ -84,7 +84,7 @@ export function WorkoutPage() {
   const hasExercises = workout.exercises.length > 0
 
   return (
-    <div className={cn('p-4 space-y-4', hasExercises && 'pb-nav-safe-xl')}>
+    <div className="p-4 space-y-4 pb-nav-safe">
       {/* Header - clean and minimal */}
       <header className="flex items-center justify-between">
         <div>
@@ -149,21 +149,19 @@ export function WorkoutPage() {
         <span className="font-medium">Add Exercise</span>
       </button>
 
-      {/* Complete button (sticky at bottom) */}
+      {/* Complete button */}
       {hasExercises && (
-        <div className="fixed bottom-nav-safe left-0 right-0 p-4 bg-gradient-to-t from-background/90 via-background/60 to-transparent pt-8">
-          <Button
-            size="lg"
-            className={cn(
-              'w-full h-12 rounded-xl transition-all',
-              confirmComplete && 'bg-green-600 hover:bg-green-700'
-            )}
-            onClick={handleComplete}
-          >
-            <Check className="mr-2 h-5 w-5" />
-            {confirmComplete ? 'Tap again to complete' : 'Complete Workout'}
-          </Button>
-        </div>
+        <Button
+          size="lg"
+          className={cn(
+            'w-full h-12 rounded-xl transition-all',
+            confirmComplete && 'bg-green-600 hover:bg-green-700'
+          )}
+          onClick={handleComplete}
+        >
+          <Check className="mr-2 h-5 w-5" />
+          {confirmComplete ? 'Tap again to complete' : 'Complete Workout'}
+        </Button>
       )}
 
       {/* Exercise Picker */}
